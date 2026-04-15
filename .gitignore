@@ -1,0 +1,21 @@
+# Ignore all CSV data files (large datasets)
+*.csv
+
+# Also ignore csvs nested under data/
+data/**/*.csv
+
+# Common dataset folders (explicit)
+data/StockTwits_2020_2022_Raw/
+data/Year_Data/
+data/2022_data/
+data/*.csv
+
+# Ignore notebook checkpoints and Python cache
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+
+# Optional: ignore environment and editor files
+venv/
+env/
+.vscode/

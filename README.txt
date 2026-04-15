@@ -60,10 +60,10 @@ The model learns relationships between:
 
 4. Experimental Setup
 We evaluate three configurations:
-Model 1: Financial-only → Price, volume, indicators
-Model 2: Sentiment-only → Text embeddings
-Model 3: Combined → Financial + sentiment
-
+Model 1: Random Forest (financial baseline)
+Model 2: LSTM/GRU Financial-only
+Model 3: LSTM/GRU Sentiment-only
+Model 4: LSTM/GRU Multimodal (financial + sentiment)
 All models share the same temporal architecture to ensure a fair comparison.
 
 Data Sources

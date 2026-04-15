@@ -1,0 +1,143 @@
+\documentclass[10pt,twocolumn]{article}
+
+\usepackage[margin=0.75in]{geometry}
+\usepackage{times}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{titlesec}
+\usepackage{caption}
+
+% Section formatting
+\titleformat{\section}{\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\bfseries}{\thesubsection}{0.5em}{}
+
+\title{\textbf{Financial Sentiment vs Market Signals \\ 
+for Stock Movement Prediction} \\[0.5em]
+\large CS 7643}
+
+\author{
+Your Name \\
+Georgia Institute of Technology \\
+\texttt{your.email@gatech.edu}
+}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\small
+Financial markets are influenced by both historical price behavior and new information conveyed through textual sources such as news and social media. This paper investigates whether sentiment extracted from financial text improves stock movement prediction beyond traditional financial features. We formulate the task as a sequence learning problem and compare three models: (1) financial-only, (2) sentiment-only, and (3) combined financial and sentiment features.
+\end{abstract}
+\vspace{1em}
+
+\section{Introduction}
+
+Predicting stock price movements is a challenging problem due to the noisy and dynamic nature of financial markets. Traditional approaches rely on historical price data and technical indicators such as momentum and volatility measures. However, markets are also driven by information flow, including earnings reports, news releases, and public sentiment.
+
+Recent advances in natural language processing, particularly transformer-based models such as RoBERTa, allow for extracting meaningful representations from text. This raises the question: can textual sentiment improve stock prediction models beyond traditional financial signals?
+
+In this work, we evaluate the contribution of sentiment features through a controlled comparison between financial-only, sentiment-only, and combined models.
+
+\section{Approach}
+
+\subsection{Problem Formulation}
+
+We define stock movement prediction as a binary classification task:
+
+\begin{equation}
+y_t =
+\begin{cases}
+1 & \text{if price increases at time } t+1 \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+
+\subsection{Sentiment Modeling}
+
+We use a fine-tuned RoBERTa model to extract sentiment embeddings from financial text, including news articles and social media posts. These embeddings capture semantic and contextual information beyond simple sentiment labels.
+
+\subsection{Feature Engineering}
+
+For each day, we construct:
+
+\textbf{Financial Features:}
+\begin{itemize}
+    \item Returns
+    \item Trading volume
+    \item RSI, MACD, Bollinger Bands
+\end{itemize}
+
+\textbf{Sentiment Features:}
+\begin{itemize}
+    \item Aggregated daily embeddings from text
+\end{itemize}
+
+\subsection{Temporal Modeling}
+
+We model sequential dependencies using an LSTM network:
+
+\begin{equation}
+X = [x_1, x_2, ..., x_T]
+\end{equation}
+
+The model outputs a prediction for the next-day movement.
+
+\section{Experiments}
+
+\subsection{Datasets}
+
+\begin{itemize}
+    \item Financial PhraseBank
+    \item Kaggle financial news datasets
+    \item StockTwits sentiment data
+    \item Yahoo Finance historical data
+\end{itemize}
+
+\subsection{Experimental Setup}
+
+We evaluate three models:
+
+\begin{itemize}
+    \item Financial-only
+    \item Sentiment-only
+    \item Combined model
+\end{itemize}
+
+\subsection{Evaluation Metrics}
+
+\begin{itemize}
+    \item Accuracy
+    \item F1 Score
+    \item Precision / Recall
+\end{itemize}
+
+\section{Results}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Model & Accuracy & F1 \\
+\midrule
+Financial-only & -- & -- \\
+Sentiment-only & -- & -- \\
+Combined & -- & -- \\
+\bottomrule
+\end{tabular}
+\caption{Model Performance}
+\end{table}
+
+\section{Discussion}
+
+We analyze whether sentiment provides additional predictive power beyond traditional financial indicators and how the two interact over time.
+
+\section{Conclusion}
+
+This work evaluates the role of textual sentiment in stock prediction. By comparing multiple model configurations, we aim to better understand the contribution of language-based signals in financial forecasting.
+
+\end{document}
