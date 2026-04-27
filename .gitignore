@@ -1,21 +1,15 @@
-# Ignore all CSV data files (large datasets)
-*.csv
-
-# Also ignore csvs nested under data/
-data/**/*.csv
-
-# Common dataset folders (explicit)
-data/StockTwits_2020_2022_Raw/
-data/Year_Data/
-data/2022_data/
-data/*.csv
-
-# Ignore notebook checkpoints and Python cache
-.ipynb_checkpoints/
+.venv/
 __pycache__/
-*.py[cod]
-
-# Optional: ignore environment and editor files
-venv/
-env/
-.vscode/
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+.env
+data/
+data/kaggle/
+data/raw/
+!data/processed/
+!data/processed/stocktwits_kaggle_daily_sentiment/
+!data/processed/stocktwits_kaggle_daily_sentiment/roberta/
+!data/processed/stocktwits_kaggle_daily_sentiment/roberta/**
+artifacts/
+*.pyc
