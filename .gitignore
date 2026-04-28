@@ -5,8 +5,7 @@ __pycache__/
 .DS_Store
 .env
 data/
-data/kaggle/
-data/raw/
+!data/
 !data/processed/
 !data/processed/stocktwits_kaggle_daily_sentiment/
 !data/processed/stocktwits_kaggle_daily_sentiment/roberta/
