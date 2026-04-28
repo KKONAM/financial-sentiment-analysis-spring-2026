@@ -13,3 +13,4 @@ data/kaggle/
 !data/processed/stocktwits_kaggle_daily_sentiment/roberta/**
 artifacts/
 *.pyc
+*.csv
