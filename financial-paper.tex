@@ -8,12 +8,11 @@
 \usepackage{titlesec}
 \usepackage{caption}
 
-% Section formatting
 \titleformat{\section}{\bfseries}{\thesection.}{0.5em}{}
 \titleformat{\subsection}{\bfseries}{\thesubsection}{0.5em}{}
 
-\title{\textbf{Financial Sentiment vs Market Signals \\ 
-for Stock Movement Prediction} \\[0.5em]
+\title{\textbf{Financial Sentiment and Technical Signals for\\
+Five-Day Stock Return Prediction} \\[0.5em]
 \large CS 7643}
 
 \author{
@@ -30,114 +29,160 @@ Georgia Institute of Technology \\
 
 \begin{abstract}
 \small
-Financial markets are influenced by both historical price behavior and new information conveyed through textual sources such as news and social media. This paper investigates whether sentiment extracted from financial text improves stock movement prediction beyond traditional financial features. We formulate the task as a sequence learning problem and compare three models: (1) financial-only, (2) sentiment-only, and (3) combined financial and sentiment features.
+Financial return prediction is difficult because short-horizon stock movements are noisy, nonstationary, and sensitive to both market dynamics and new information. This project studies whether daily sentiment features, combined with technical indicators, can support sequence models for forecasting future stock returns. We construct a panel dataset for AAPL, AMZN, META, NVDA, and TSLA from 2020 through 2022, using daily market indicators and aggregated sentiment scores. The target is the future five-trading-day return. We evaluate recurrent neural models, focusing on tuned LSTM and GRU architectures, and compare them with simple return and direction baselines. The tuned LSTM achieves the lowest test error with MAE 0.0574 and RMSE 0.0752, while the tuned GRU obtains MAE 0.0597, RMSE 0.0782, and directional accuracy 0.5180. Although the recurrent models learn weak positive correlation with future returns, results show that this task remains challenging: the zero-return baseline is competitive on RMSE, and the GRU directional score matches an always-down baseline in the bearish 2022 test period. These findings suggest that sentiment-enhanced recurrent models capture some signal but require stronger objectives or additional features to produce robust trading-direction forecasts.
 \end{abstract}
 \vspace{1em}
 
 \section{Introduction}
 
-Predicting stock price movements is a challenging problem due to the noisy and dynamic nature of financial markets. Traditional approaches rely on historical price data and technical indicators such as momentum and volatility measures. However, markets are also driven by information flow, including earnings reports, news releases, and public sentiment.
+Predicting stock returns is a central problem in financial machine learning, but it is also a difficult one. Daily returns contain substantial noise, and predictive relationships can change quickly as market regimes shift. Traditional approaches often rely on price-derived technical indicators, such as momentum, relative strength, moving-average convergence divergence, and volatility measures. However, financial markets also respond to information outside the price series, including news, social media discussion, earnings narratives, and investor sentiment.
 
-Recent advances in natural language processing, particularly transformer-based models such as RoBERTa, allow for extracting meaningful representations from text. This raises the question: can textual sentiment improve stock prediction models beyond traditional financial signals?
+This project investigates whether combining market indicators with daily sentiment scores improves short-horizon stock prediction. We frame the task as a supervised sequence learning problem: given a rolling window of recent financial and sentiment features, the model predicts the future five-trading-day return for a stock. We evaluate recurrent neural networks because LSTM and GRU models are designed to summarize temporal dependencies in ordered data.
 
-In this work, we evaluate the contribution of sentiment features through a controlled comparison between financial-only, sentiment-only, and combined models.
+The main contribution of this experiment is an end-to-end empirical comparison between tuned LSTM and GRU models on a shared dataset and split. Rather than reporting only classification accuracy, we evaluate both regression error and directional correctness. This is important because a model can achieve low return error by predicting values close to zero while still failing to provide useful directional information.
 
-\section{Approach}
+\section{Data and Features}
 
-\subsection{Problem Formulation}
+\subsection{Dataset}
 
-We define stock movement prediction as a binary classification task:
+The dataset contains daily observations for five large-cap technology stocks: AAPL, AMZN, META, NVDA, and TSLA. The final processed dataset covers January 23, 2020 through December 22, 2022 and contains 3,685 stock-day rows. The data are split chronologically to avoid look-ahead leakage: observations through December 31, 2021 are used for training, observations from January 2022 through June 2022 are used for validation, and observations after June 30, 2022 are used for testing. This produces 2,455 raw training rows, 620 validation rows, and 610 test rows.
+
+\subsection{Market Features}
+
+For each stock-day, we include technical and market-derived features:
+
+\begin{itemize}
+    \item daily return,
+    \item relative strength index (RSI),
+    \item moving-average convergence divergence (MACD),
+    \item Bollinger Band position,
+    \item momentum,
+    \item trading volume.
+\end{itemize}
+
+These features summarize recent price behavior, trend, overbought or oversold conditions, and market activity.
+
+\subsection{Sentiment Features}
+
+The sentiment feature set consists of daily aggregated sentiment statistics:
+
+\begin{itemize}
+    \item positive sentiment score,
+    \item negative sentiment score,
+    \item neutral sentiment score,
+    \item aggregate sentiment score,
+    \item sentiment confidence,
+    \item article count.
+\end{itemize}
+
+These variables are aligned at the daily ticker level and merged with the market indicators. All input features are standardized using only the training period statistics, then the same scaler is applied to validation and test data.
+
+\section{Methodology}
+
+\subsection{Prediction Target}
+
+The prediction target is the future five-trading-day return:
 
 \begin{equation}
-y_t =
+y_t = \frac{P_{t+5} - P_t}{P_t},
+\end{equation}
+
+where $P_t$ is the adjusted stock price at day $t$. The target is treated as a continuous regression value. For directional evaluation, predicted and actual returns are mapped to three classes using a flat threshold of 0.005:
+
+\begin{equation}
+d(y) =
 \begin{cases}
-1 & \text{if price increases at time } t+1 \\
-0 & \text{otherwise}
+1 & \text{if } y > 0.005, \\
+-1 & \text{if } y < -0.005, \\
+0 & \text{otherwise.}
 \end{cases}
 \end{equation}
 
-\subsection{Sentiment Modeling}
+This separates meaningful positive and negative moves from near-flat outcomes.
 
-We use a fine-tuned RoBERTa model to extract sentiment embeddings from financial text, including news articles and social media posts. These embeddings capture semantic and contextual information beyond simple sentiment labels.
+\subsection{Sequence Construction}
 
-\subsection{Feature Engineering}
+For each ticker, observations are sorted chronologically and converted into rolling sequences. A sequence contains the previous $T$ daily feature vectors, where $T$ is tuned as a hyperparameter. The model outputs one scalar prediction for the future five-day return associated with the sequence end date. Some tuning trials include the current row in the sequence, while others use only strictly prior rows.
 
-For each day, we construct:
+\subsection{Models}
 
-\textbf{Financial Features:}
-\begin{itemize}
-    \item Returns
-    \item Trading volume
-    \item RSI, MACD, Bollinger Bands
-\end{itemize}
+We evaluate two recurrent architectures:
 
-\textbf{Sentiment Features:}
-\begin{itemize}
-    \item Aggregated daily embeddings from text
-\end{itemize}
+\textbf{LSTM.} The tuned LSTM uses gated memory cells to preserve long-range temporal information. The best validation configuration uses a 20-day sequence length, excludes the current row, has hidden size 16, three recurrent layers, bidirectional recurrence, a 32-unit classifier head, fully connected dropout of 0.2, Adam optimization, and Smooth L1 loss.
 
-\subsection{Temporal Modeling}
+\textbf{GRU.} The GRU is a lighter recurrent model with update and reset gates. The GRU tuner searches a broader architecture space, including sequence length, hidden size, recurrent depth, bidirectionality, dropout, pooling strategy, activation function, layer normalization, optimizer, weight decay, batch size, loss function, target scaling, and gradient clipping. The best balanced GRU configuration uses a 10-day sequence length, excludes the current row, hidden size 128, four recurrent layers, max pooling over sequence outputs, layer normalization, a two-layer tanh regression head, AdamW optimization, MAE loss, learning rate 0.001, weight decay $10^{-6}$, dropout 0.1 in the GRU and 0.2 in the fully connected head, and gradient clipping at 1.0.
 
-We model sequential dependencies using an LSTM network:
+\subsection{Hyperparameter Selection}
 
-\begin{equation}
-X = [x_1, x_2, ..., x_T]
-\end{equation}
-
-The model outputs a prediction for the next-day movement.
+Hyperparameters are selected using validation performance only. The tuning objective combines RMSE and MAE with additional terms for directional accuracy, correlation, and prediction collapse. The collapse penalty is included because early trials sometimes achieved competitive RMSE by predicting nearly constant small returns, which is not useful for directional forecasting. The final checkpoint for each model is selected from the best validation epoch under early stopping.
 
 \section{Experiments}
 
-\subsection{Datasets}
-
-\begin{itemize}
-    \item Financial PhraseBank
-    \item Kaggle financial news datasets
-    \item StockTwits sentiment data
-    \item Yahoo Finance historical data
-\end{itemize}
-
-\subsection{Experimental Setup}
-
-We evaluate three models:
-
-\begin{itemize}
-    \item Financial-only
-    \item Sentiment-only
-    \item Combined model
-\end{itemize}
-
 \subsection{Evaluation Metrics}
 
+The primary regression metrics are mean absolute error (MAE) and root mean squared error (RMSE). We also report directional accuracy using the three-way direction mapping above, Pearson correlation between actual and predicted returns, prediction mean, and prediction standard deviation.
+
+\subsection{Baselines}
+
+We compare the recurrent models against simple baselines:
+
 \begin{itemize}
-    \item Accuracy
-    \item F1 Score
-    \item Precision / Recall
+    \item zero-return prediction,
+    \item training-set mean return prediction,
+    \item always-up, always-down, and always-flat direction baselines.
 \end{itemize}
+
+These baselines are important because the 2022 test period is bearish for several technology stocks. A naive always-down directional classifier is therefore unusually strong on the test split.
 
 \section{Results}
 
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{lcc}
+\begin{tabular}{lcccc}
 \toprule
-Model & Accuracy & F1 \\
+Model & MAE & RMSE & Dir. Acc. & Corr. \\
 \midrule
-Financial-only & -- & -- \\
-Sentiment-only & -- & -- \\
-Combined & -- & -- \\
+LSTM & 0.0574 & 0.0752 & 0.5148 & 0.0908 \\
+GRU & 0.0597 & 0.0782 & 0.5180 & 0.0866 \\
+Zero return & 0.0580 & 0.0759 & 0.0623 & -- \\
+Train mean & 0.0604 & 0.0788 & 0.4197 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Model Performance}
+\caption{Test performance for five-day return prediction.}
 \end{table}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+Direction Baseline & Up & Down & Flat \\
+\midrule
+Test accuracy & 0.4197 & 0.5180 & 0.0623 \\
+\bottomrule
+\end{tabular}
+\caption{Direction-only baselines on the 2022 test split.}
+\end{table}
+
+The tuned LSTM obtains the best regression performance, with MAE 0.0574 and RMSE 0.0752. It slightly outperforms the zero-return baseline on MAE but not by a large margin. The GRU achieves MAE 0.0597 and RMSE 0.0782. Its directional accuracy is 0.5180, which is marginally higher than the LSTM directional accuracy but equal to the always-down baseline. Both recurrent models produce weak positive test correlations with future returns, around 0.09.
 
 \section{Discussion}
 
-We analyze whether sentiment provides additional predictive power beyond traditional financial indicators and how the two interact over time.
+The results show that sentiment-enhanced recurrent models can learn weak predictive structure, but the signal is limited. The strongest result is the tuned LSTM's RMSE of 0.0752 and positive correlation of 0.0908. However, the zero-return baseline remains very competitive on RMSE. This suggests that much of the five-day return target is dominated by noise, and minimizing regression error encourages models to produce conservative predictions near the center of the return distribution.
+
+The GRU tuning experiment highlights this problem clearly. Initial searches selected models with low error but collapsed prediction variance and poor directional accuracy. After adding objective penalties for collapsed predictions and rewards for direction and correlation, the selected GRU produced more directionally useful validation behavior. Even so, its final test directional accuracy matched the always-down baseline because the test period contains more negative than positive five-day moves. This indicates that directional accuracy alone can be misleading under imbalanced market regimes.
+
+Overall, the LSTM is the stronger model in this experiment. It has lower MAE and RMSE than the GRU and maintains similar directional accuracy and correlation. The GRU remains useful as a comparison point because it is computationally simpler and reaches a comparable direction score, but its return-error performance is weaker.
+
+\section{Limitations}
+
+There are several limitations. First, the dataset includes only five technology stocks, so the results may not generalize to broader sectors or market regimes. Second, the test split is concentrated in the second half of 2022, a period with a strong bearish bias for technology stocks. Third, the sentiment features are daily aggregates, which may lose intraday timing information and article-level nuance. Fourth, the models optimize return regression even though practical trading decisions often depend more directly on directional classification, ranking, or risk-adjusted returns.
 
 \section{Conclusion}
 
-This work evaluates the role of textual sentiment in stock prediction. By comparing multiple model configurations, we aim to better understand the contribution of language-based signals in financial forecasting.
+This study evaluates LSTM and GRU sequence models for five-day return prediction using combined technical and sentiment features. The tuned LSTM performs best overall, achieving MAE 0.0574, RMSE 0.0752, directional accuracy 0.5148, and correlation 0.0908 on the held-out test set. The tuned GRU achieves similar directional accuracy but weaker regression error. The experiments suggest that sentiment and market features contain some weak predictive signal, but the current recurrent regression setup is not yet strong enough to clearly outperform simple baselines across all metrics.
+
+Future work should consider a multitask objective that jointly predicts return magnitude and direction, direct classification of up/down/flat movement, calibration against class imbalance, richer textual representations, and broader cross-sectional data. These changes may better align the learning objective with the financial forecasting problem than pure five-day return regression.
 
 \end{document}

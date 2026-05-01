@@ -1,0 +1,2 @@
+[console_scripts]
+financial-sentiment-2026 = cli:app

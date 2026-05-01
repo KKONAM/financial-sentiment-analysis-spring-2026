@@ -8,8 +8,8 @@ import torch
 from config import settings
 from data_sources.market_data import download_price_history, save_price_history
 from data_sources.newsapi_client import NewsApiClient
-from features.build_features import aggregate_daily_sentiment, build_modeling_dataset
-from sentiment.finbert import FinBertSentimentAnalyzer
+from features.build_features import build_modeling_dataset
+from sentiment.finbert import FinBertSentimentExtractor
 from temporal.gru import GruTrainingResult, train_gru_model
 from temporal.lstm import LstmTrainingResult, train_lstm_model
 
@@ -44,9 +44,9 @@ def convert_news_json(json_path: Path, output_path: Path | None = None) -> Path:
 def build_dataset(ticker: str, from_date: str, to_date: str, news_path: Path) -> Path:
     settings.ensure_directories()
     news_frame = pd.read_csv(news_path)
-    analyzer = FinBertSentimentAnalyzer()
+    analyzer = FinBertSentimentExtractor()
     scored_news = analyzer.score_news_frame(news_frame, text_column="title")
-    daily_sentiment = aggregate_daily_sentiment(scored_news)
+    daily_sentiment = analyzer.aggregate_daily_sentiment(scored_news)
 
     price_frame = download_price_history(ticker=ticker, from_date=from_date, to_date=to_date)
     dataset = build_modeling_dataset(price_frame=price_frame, daily_sentiment_frame=daily_sentiment, forecast_horizon=settings.forecast_horizon)
