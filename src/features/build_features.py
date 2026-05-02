@@ -16,7 +16,11 @@ try:
         resolve_column,
     )
     from sentiment.finbert import FinBertSentimentExtractor
-    from technical_indicators.indicators import MARKET_FEATURES, build_market_indicators, build_price_feature_frame
+    from technical_indicators.indicators import (
+        MARKET_FEATURES,
+        build_market_indicators,
+        build_price_feature_frame,
+    )
 except ModuleNotFoundError as exc:
     if exc.name not in {"features", "sentiment", "technical_indicators"}:
         raise
@@ -30,7 +34,25 @@ except ModuleNotFoundError as exc:
         resolve_column,
     )
     from src.sentiment.finbert import FinBertSentimentExtractor
-    from src.technical_indicators.indicators import MARKET_FEATURES, build_market_indicators, build_price_feature_frame
+    from src.technical_indicators.indicators import (
+        MARKET_FEATURES,
+        build_market_indicators,
+        build_price_feature_frame,
+    )
+
+
+DATE_COLUMN_CANDIDATES = ["date", "Date", "created_at", "createdAt", "published_at", "publishedAt"]
+TEXT_COLUMN_CANDIDATES = ["title", "headline", "body", "description", "content"]
+STOCKTWITS_DATE_COLUMN_CANDIDATES = [
+    "created_at",
+    "date",
+    "Date",
+    "createdAt",
+    "published_at",
+    "publishedAt",
+]
+BULLISH_LABEL_PATTERN = "'Bullish'|\"Bullish\""
+BEARISH_LABEL_PATTERN = "'Bearish'|\"Bearish\""
 
 
 def build_daily_sentiment(
@@ -77,10 +99,12 @@ def build_modeling_dataset(
     prices = build_price_feature_frame(price_frame=price_frame, forecast_horizon=forecast_horizon)
     sentiment = _normalize_sentiment_dates(daily_sentiment_frame)
     merged = prices.merge(sentiment, on="Date", how="left")
+    filled = fill_missing_sentiment(merged)
+    finite_values = filled.replace([np.inf, -np.inf], np.nan)
+    required_columns = MARKET_FEATURES + ["future_return", "label"]
+    complete_rows = finite_values.dropna(subset=required_columns)
 
-    return fill_missing_sentiment(merged).replace([np.inf, -np.inf], np.nan).dropna(
-        subset=MARKET_FEATURES + ["future_return", "label"]
-    ).reset_index(drop=True)
+    return complete_rows.reset_index(drop=True)
 
 
 def build_daily_sentiment_from_csv(
@@ -157,30 +181,19 @@ def prepare_news_for_sentiment(
         return pd.DataFrame(columns=["ticker", "date", "finbert_text"])
 
     frame = news_df.copy()
-    resolved_date_column = resolve_column(
-        frame,
-        preferred=date_column,
-        candidates=["date", "Date", "created_at", "createdAt", "published_at", "publishedAt"],
-        column_kind="date",
-    )
-    resolved_text_column = resolve_column(
-        frame,
-        preferred=text_column,
-        candidates=["title", "headline", "body", "description", "content"],
-        column_kind="text",
+    resolved_date_column, resolved_text_column = _resolve_news_columns(
+        frame=frame,
+        date_column=date_column,
+        text_column=text_column,
     )
 
-    if ticker_column in frame.columns:
-        frame["ticker"] = frame[ticker_column]
-    elif ticker is not None:
-        frame["ticker"] = ticker
-    else:
-        raise ValueError(
-            f"News data must include a '{ticker_column}' column or receive a ticker argument "
-            "so sentiment can be merged with indicator features."
-        )
-
-    frame["date"] = pd.to_datetime(frame[resolved_date_column], utc=True, errors="coerce").dt.tz_convert(None).dt.normalize()
+    frame = _assign_ticker(
+        frame=frame,
+        ticker=ticker,
+        ticker_column=ticker_column,
+        data_name="News data",
+    )
+    frame["date"] = _to_normalized_datetime(frame[resolved_date_column])
     frame["finbert_text"] = build_finbert_text(frame, resolved_text_column)
     frame = frame.dropna(subset=["ticker", "date"])
 
@@ -239,7 +252,8 @@ def build_lstm_sequences(
     include_current_row: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, pd.DataFrame]:
     feature_cols = MARKET_FEATURES + SENTIMENT_FEATURES
-    missing_columns = [column for column in [*feature_cols, target_column, "ticker", "Date"] if column not in df.columns]
+    required_columns = [*feature_cols, target_column, "ticker", "Date"]
+    missing_columns = [column for column in required_columns if column not in df.columns]
     if missing_columns:
         raise ValueError(f"Missing required columns for LSTM sequence creation: {missing_columns}")
 
@@ -268,8 +282,10 @@ def _build_sentiment_for_merge(
     news_date_column: str,
     news_ticker_column: str,
 ) -> pd.DataFrame:
-    csv_text_column = None if text_column == "title" else text_column
-    csv_date_column = None if news_date_column == "date" else news_date_column
+    csv_text_column, csv_date_column = _resolve_csv_column_overrides(
+        text_column=text_column,
+        news_date_column=news_date_column,
+    )
 
     if news_csv_path is not None:
         return build_daily_sentiment_from_csv(
@@ -283,17 +299,14 @@ def _build_sentiment_for_merge(
         )
 
     if news_df is None:
-        daily_sentiment_frames = [
-            build_daily_sentiment_from_local_csv(
-                symbol=symbol,
-                start_date=start_date,
-                end_date=end_date,
-                text_column=csv_text_column,
-                date_column=csv_date_column,
-                ticker_column=news_ticker_column,
-            )
-            for symbol in symbols
-        ]
+        daily_sentiment_frames = _build_local_daily_sentiment_frames(
+            symbols=symbols,
+            start_date=start_date,
+            end_date=end_date,
+            text_column=csv_text_column,
+            date_column=csv_date_column,
+            ticker_column=news_ticker_column,
+        )
         return pd.concat(daily_sentiment_frames, ignore_index=True)
 
     return build_daily_sentiment(
@@ -310,6 +323,39 @@ def _is_stocktwits_raw_frame(frame: pd.DataFrame) -> bool:
     return {"created_at", "entities"}.issubset(frame.columns)
 
 
+def _resolve_csv_column_overrides(
+    text_column: str,
+    news_date_column: str,
+) -> tuple[str | None, str | None]:
+    csv_text_column = None if text_column == "title" else text_column
+    csv_date_column = None if news_date_column == "date" else news_date_column
+    return csv_text_column, csv_date_column
+
+
+def _build_local_daily_sentiment_frames(
+    symbols: list[str],
+    start_date: str,
+    end_date: str,
+    text_column: str | None,
+    date_column: str | None,
+    ticker_column: str,
+) -> list[pd.DataFrame]:
+    daily_sentiment_frames = []
+
+    for symbol in symbols:
+        daily_sentiment = build_daily_sentiment_from_local_csv(
+            symbol=symbol,
+            start_date=start_date,
+            end_date=end_date,
+            text_column=text_column,
+            date_column=date_column,
+            ticker_column=ticker_column,
+        )
+        daily_sentiment_frames.append(daily_sentiment)
+
+    return daily_sentiment_frames
+
+
 def _build_daily_sentiment_from_stocktwits_labels(
     stocktwits_df: pd.DataFrame,
     start_date: str,
@@ -322,15 +368,11 @@ def _build_daily_sentiment_from_stocktwits_labels(
     resolved_date_column = resolve_column(
         frame,
         preferred=date_column,
-        candidates=["created_at", "date", "Date", "createdAt", "published_at", "publishedAt"],
+        candidates=STOCKTWITS_DATE_COLUMN_CANDIDATES,
         column_kind="date",
     )
 
-    frame["Date"] = (
-        pd.to_datetime(frame[resolved_date_column], errors="coerce", utc=True)
-        .dt.tz_convert(None)
-        .dt.normalize()
-    )
+    frame["Date"] = _to_normalized_datetime(frame[resolved_date_column])
     frame = frame.dropna(subset=["Date"])
     frame = filter_frame_by_date_range(
         frame,
@@ -339,36 +381,94 @@ def _build_daily_sentiment_from_stocktwits_labels(
         end_date=end_date,
     )
 
-    if ticker_column in frame.columns:
-        frame["ticker"] = frame[ticker_column]
-    elif ticker is not None:
-        frame["ticker"] = ticker
-    else:
-        raise ValueError(
-            f"StockTwits data must include a '{ticker_column}' column or receive a ticker argument "
-            "so sentiment can be merged with indicator features."
-        )
-
-    entities = frame["entities"].fillna("").astype(str)
-    frame["positive_score"] = entities.str.contains("'Bullish'|\"Bullish\"", regex=True).astype(float)
-    frame["negative_score"] = entities.str.contains("'Bearish'|\"Bearish\"", regex=True).astype(float)
-    frame["neutral_score"] = ((frame["positive_score"] == 0.0) & (frame["negative_score"] == 0.0)).astype(float)
-    frame["sentiment_score"] = frame["positive_score"] - frame["negative_score"]
-
-    daily = (
-        frame.groupby(["ticker", "Date"])
-        .agg(
-            positive_score=("positive_score", "mean"),
-            negative_score=("negative_score", "mean"),
-            neutral_score=("neutral_score", "mean"),
-            sentiment_score=("sentiment_score", "mean"),
-            article_count=("sentiment_score", "count"),
-        )
-        .reset_index()
+    frame = _assign_ticker(
+        frame=frame,
+        ticker=ticker,
+        ticker_column=ticker_column,
+        data_name="StockTwits data",
     )
-    daily["sentiment_confidence"] = daily[["positive_score", "negative_score", "neutral_score"]].max(axis=1)
+    scored_frame = _add_stocktwits_label_scores(frame)
+    daily = _aggregate_stocktwits_daily_scores(scored_frame)
+    daily["sentiment_confidence"] = _max_sentiment_confidence(daily)
 
     return daily[["ticker", "Date", *SENTIMENT_FEATURES]]
+
+
+def _resolve_news_columns(
+    frame: pd.DataFrame,
+    date_column: str | None,
+    text_column: str | None,
+) -> tuple[str, str]:
+    resolved_date_column = resolve_column(
+        frame,
+        preferred=date_column,
+        candidates=DATE_COLUMN_CANDIDATES,
+        column_kind="date",
+    )
+    resolved_text_column = resolve_column(
+        frame,
+        preferred=text_column,
+        candidates=TEXT_COLUMN_CANDIDATES,
+        column_kind="text",
+    )
+    return resolved_date_column, resolved_text_column
+
+
+def _assign_ticker(
+    frame: pd.DataFrame,
+    ticker: str | None,
+    ticker_column: str,
+    data_name: str,
+) -> pd.DataFrame:
+    frame = frame.copy()
+
+    if ticker_column in frame.columns:
+        frame["ticker"] = frame[ticker_column]
+        return frame
+
+    if ticker is not None:
+        frame["ticker"] = ticker
+        return frame
+
+    raise ValueError(
+        f"{data_name} must include a '{ticker_column}' column or receive a ticker argument "
+        "so sentiment can be merged with indicator features."
+    )
+
+
+def _to_normalized_datetime(values: pd.Series) -> pd.Series:
+    timestamps = pd.to_datetime(values, errors="coerce", utc=True)
+    timestamps = timestamps.dt.tz_convert(None)
+    return timestamps.dt.normalize()
+
+
+def _add_stocktwits_label_scores(frame: pd.DataFrame) -> pd.DataFrame:
+    scored = frame.copy()
+    entities = scored["entities"].fillna("").astype(str)
+
+    scored["positive_score"] = entities.str.contains(BULLISH_LABEL_PATTERN, regex=True).astype(float)
+    scored["negative_score"] = entities.str.contains(BEARISH_LABEL_PATTERN, regex=True).astype(float)
+    scored["neutral_score"] = (
+        (scored["positive_score"] == 0.0) & (scored["negative_score"] == 0.0)
+    ).astype(float)
+    scored["sentiment_score"] = scored["positive_score"] - scored["negative_score"]
+    return scored
+
+
+def _aggregate_stocktwits_daily_scores(frame: pd.DataFrame) -> pd.DataFrame:
+    daily_scores = frame.groupby(["ticker", "Date"]).agg(
+        positive_score=("positive_score", "mean"),
+        negative_score=("negative_score", "mean"),
+        neutral_score=("neutral_score", "mean"),
+        sentiment_score=("sentiment_score", "mean"),
+        article_count=("sentiment_score", "count"),
+    )
+    return daily_scores.reset_index()
+
+
+def _max_sentiment_confidence(frame: pd.DataFrame) -> pd.Series:
+    score_columns = ["positive_score", "negative_score", "neutral_score"]
+    return frame[score_columns].max(axis=1)
 
 
 def _normalize_sentiment_dates(daily_sentiment_frame: pd.DataFrame) -> pd.DataFrame:
