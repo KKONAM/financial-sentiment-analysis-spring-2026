@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2021) (preloaded format=pdflatex 2021.9.6)  3 MAY 2026 14:31
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2021) (preloaded format=pdflatex 2021.9.6)  3 MAY 2026 15:02
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -452,156 +452,117 @@ LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 2
 (/usr/local/texlive/2021/texmf-dist/tex/latex/psnfss/ot1pcr.fd
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
-LaTeX Info: Symbol \textrightarrow not provided by
-            font family ptm in TS1 encoding.
-            Default family used instead on input line 29.
 LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 4
 4.
 
 (/usr/local/texlive/2021/texmf-dist/tex/latex/psnfss/ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
-Underfull \hbox (badness 2680) in paragraph at lines 44--45
-[]\OT1/ptm/m/n/10 Transformer im-ple-men-ta-tion achiev-ing +4.12% over
+Underfull \hbox (badness 1902) in paragraph at lines 46--47
+[]\OT1/ptm/m/n/10 Demonstration of poor gen-er-al-iza-tion across mar-ket
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 70--71
+[]\OT1/ptm/b/n/10 StockTwits Sen-ti-ment: \OT1/ptm/m/n/10 Pub-lic API pro-vides
+ so-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 70--71
+\OT1/ptm/m/n/10 cial me-dia mes-sages with user-labeled sen-ti-ment
+ []
+
+
+Underfull \hbox (badness 3128) in paragraph at lines 70--71
+\OT1/ptm/m/n/10 (bullish/bearish). We score mes-sages us-ing RoBERTa
+ []
+
+
+Overfull \hbox (46.71492pt too wide) in paragraph at lines 70--71
+\OT1/ptm/m/n/10 (\OT1/pcr/m/n/10 cardiffnlp/twitter-roberta-base-sentiment-late
+st\OT1/ptm/m/n/10 )
  []
 
 [1{/usr/local/texlive/2021/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
 
 
 ]
-Underfull \hbox (badness 10000) in paragraph at lines 71--72
-[]\OT1/ptm/b/n/10 NewsAPI Sen-ti-ment: \OT1/ptm/m/n/10 Busi-ness news head-
+LaTeX Info: Symbol \textrightarrow not provided by
+            font family ptm in TS1 encoding.
+            Default family used instead on input line 111.
+LaTeX Info: Symbol \textrightarrow not provided by
+            font family ptm in TS1 encoding.
+            Default family used instead on input line 116.
+LaTeX Info: Symbol \textrightarrow not provided by
+            font family ptm in TS1 encoding.
+            Default family used instead on input line 116.
+
+Underfull \hbox (badness 1163) in paragraph at lines 193--194
+[]\OT1/ptm/m/n/10 AAPL, AMZN, NVDA: Iden-ti-cal per-for-mance (both
  []
 
-
-Underfull \hbox (badness 10000) in paragraph at lines 71--72
-\OT1/ptm/m/n/10 lines scored us-ing pre-trained RoBERTa
+[2] [3]
+Underfull \hbox (badness 1629) in paragraph at lines 377--378
+[]\OT1/ptm/b/n/10 Both mod-els per-form iden-ti-cally \OT1/ptm/m/n/10 (LSTM: 43
+.57%,
  []
 
-
-Overfull \hbox (49.21492pt too wide) in paragraph at lines 71--72
-\OT1/ptm/m/n/10 (\OT1/pcr/m/n/10 cardiffnlp/twitter-roberta-base-sentiment-late
-st\OT1/ptm/m/n/10 ).
- []
-
-LaTeX Info: Symbol \textrightarrow not provided by
-            font family ptm in TS1 encoding.
-            Default family used instead on input line 131.
-LaTeX Info: Symbol \textrightarrow not provided by
-            font family ptm in TS1 encoding.
-            Default family used instead on input line 136.
-LaTeX Info: Symbol \textrightarrow not provided by
-            font family ptm in TS1 encoding.
-            Default family used instead on input line 136.
-[2]
-Underfull \hbox (badness 1281) in paragraph at lines 231--232
-\OT1/ptm/m/n/10 (+6.08% for TSLA) but hurts sta-ble stocks (-3.73% for
- []
-
-<transformer_figures/per_ticker_comparison.pdf, id=142, 570.73976pt x 354.08662
-pt>
-File: transformer_figures/per_ticker_comparison.pdf Graphic file (type pdf)
-<use transformer_figures/per_ticker_comparison.pdf>
-Package pdftex.def Info: transformer_figures/per_ticker_comparison.pdf  used on
- input line 255.
-(pdftex.def)             Requested size: 247.94499pt x 153.82112pt.
-
-Underfull \hbox (badness 1389) in paragraph at lines 293--293
-[]\OT1/ptm/m/n/10 Table 4: |Fea-ture ab-la-tions re-veal pre-dic-tion col-lapse
- in
- []
-
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-<transformer_figures/feature_ablation.pdf, id=143, 859.83545pt x 371.81671pt>
-File: transformer_figures/feature_ablation.pdf Graphic file (type pdf)
-<use transformer_figures/feature_ablation.pdf>
-Package pdftex.def Info: transformer_figures/feature_ablation.pdf  used on inpu
-t line 298.
-(pdftex.def)             Requested size: 247.94499pt x 107.21701pt.
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-LaTeX Info: Symbol \textrightarrow not provided by
-            font family ptm in TS1 encoding.
-            Default family used instead on input line 321.
-LaTeX Info: Symbol \textrightarrow not provided by
-            font family ptm in TS1 encoding.
-            Default family used instead on input line 321.
-[3 <./transformer_figures/per_ticker_comparison.pdf>]
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-<transformer_figures/2026_validation.pdf, id=223, 859.81854pt x 372.14911pt>
-File: transformer_figures/2026_validation.pdf Graphic file (type pdf)
-<use transformer_figures/2026_validation.pdf>
-Package pdftex.def Info: transformer_figures/2026_validation.pdf  used on input
- line 354.
-(pdftex.def)             Requested size: 247.94499pt x 107.31287pt.
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-LaTeX Info: Symbol \textrightarrow not provided by
-            font family ptm in TS1 encoding.
-            Default family used instead on input line 365.
-LaTeX Info: Symbol \textrightarrow not provided by
-            font family ptm in TS1 encoding.
-            Default family used instead on input line 367.
-[4 <./transformer_figures/feature_ablation.pdf> <./transformer_figures/2026_val
-idation.pdf>]
-LaTeX Info: Symbol \textrightarrow not provided by
-            font family ptm in TS1 encoding.
-            Default family used instead on input line 387.
-
-Underfull \hbox (badness 1354) in paragraph at lines 429--430
-[]\OT1/ptm/b/n/10 Sentiment cov-er-age: \OT1/ptm/m/n/10 News-API lim-ited to 39
- days
- []
-
-LaTeX Info: Symbol \textrightarrow not provided by
-            font family ptm in TS1 encoding.
-            Default family used instead on input line 441.
-
-Underfull \hbox (badness 10000) in paragraph at lines 471--473
+[4]
+Underfull \hbox (badness 10000) in paragraph at lines 410--412
 []$\OT1/pcr/m/n/10 https : / / github . com / KKONAM /
  []
 
-[5] [6]
-Overfull \hbox (145.94083pt too wide) in paragraph at lines 493--525
+[5]
+Overfull \hbox (145.94083pt too wide) in paragraph at lines 431--463
  [][] 
  []
 
-[7
+[6
 
 ] (./FINAL_PAPER.aux)
-Package rerunfilecheck Info: File `FINAL_PAPER.out' has not changed.
-(rerunfilecheck)             Checksum: 0A9138E61DDDC2C68705B0C9EF6F2F3E;4839.
+
+Package rerunfilecheck Warning: File `FINAL_PAPER.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `FINAL_PAPER.out':
+(rerunfilecheck)             Before: 0A9138E61DDDC2C68705B0C9EF6F2F3E;4839
+(rerunfilecheck)             After:  3C74EFD460E708CB302C040145B4D313;3752.
  ) 
 Here is how much of TeX's memory you used:
- 11111 strings out of 478994
- 166508 string characters out of 5858185
- 482551 words of memory out of 5000000
- 28372 multiletter control sequences out of 15000+600000
- 423475 words of font info for 79 fonts, out of 8000000 for 9000
+ 11090 strings out of 478994
+ 165580 string characters out of 5858185
+ 480538 words of memory out of 5000000
+ 28354 multiletter control sequences out of 15000+600000
+ 423138 words of font info for 78 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 71i,10n,74p,1147b,387s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/local/texlive/2021/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc
-}{/usr/local/texlive/2021/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/te
-xlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/tex
-live/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texli
-ve/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive
+ 71i,10n,74p,1142b,414s stack positions out of 5000i,500n,10000p,200000b,80000s
+pdfTeX warning (dest): name{subsection.5.6} has been referenced but does not 
+exist, replaced by a fixed one
+
+pdfTeX warning (dest): name{subsection.5.5} has been referenced but does not ex
+ist, replaced by a fixed one
+
+pdfTeX warning (dest): name{subsection.4.5} has been referenced but does not ex
+ist, replaced by a fixed one
+
+pdfTeX warning (dest): name{subsection.4.4} has been referenced but does not ex
+ist, replaced by a fixed one
+
+{/usr/local/texlive/2021/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}{
+/usr/local/texlive/2021/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/texl
+ive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texli
+ve/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive
 /2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/20
-21/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/2021/
-texmf-dist/fonts/type1/public/cm-super/sfrm0900.pfb></usr/local/texlive/2021/te
-xmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2021/texm
-f-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/local/texlive/2021/texmf-dist/f
-onts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1
-/urw/times/utmr8a.pfb>
-Output written on FINAL_PAPER.pdf (7 pages, 177879 bytes).
+21/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2021
+/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/local/texlive/2021/texmf-d
+ist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2021/texmf-dist/fonts/
+type1/urw/times/utmr8a.pfb>
+Output written on FINAL_PAPER.pdf (6 pages, 92488 bytes).
 PDF statistics:
- 475 PDF objects out of 1000 (max. 8388607)
- 251 compressed objects within 3 object streams
- 64 named destinations out of 1000 (max. 500000)
- 256 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 231 PDF objects out of 1000 (max. 8388607)
+ 213 compressed objects within 3 object streams
+ 66 named destinations out of 1000 (max. 500000)
+ 241 words of extra memory for PDF output out of 10000 (max. 10000000)
 

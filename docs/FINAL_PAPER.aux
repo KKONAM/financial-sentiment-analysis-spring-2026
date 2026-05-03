@@ -20,43 +20,29 @@
 \@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{1}{section.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {3}Data}{1}{section.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Dataset Description}{1}{subsection.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Data Collection Methodology}{1}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Data Collection}{1}{subsection.3.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Features and Target}{2}{subsection.3.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Data Limitations and Ethics}{2}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Data Limitations}{2}{subsection.3.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {4}Methodology}{2}{section.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Problem Structure}{2}{subsection.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}LSTM Architecture}{2}{subsection.4.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Transformer Architecture}{2}{subsection.4.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Training Details}{2}{subsection.4.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Evaluation Metrics}{3}{subsection.4.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}Experiments and Results}{3}{section.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Experiment 1: LSTM Baseline}{3}{subsection.5.1}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces LSTM baseline performance. NVDA is only ticker to improve on 2026 data (+0.72\%).\relax }}{3}{table.caption.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Experiment 2: Combined Sentiment}{3}{subsection.5.2}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Combined sentiment improves volatile stocks (TSLA, NVDA) but degrades stable stocks (AAPL).\relax }}{3}{table.caption.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Experiment 3: Transformer Model}{3}{subsection.5.3}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Transformer outperforms LSTM by +4.12\%. NVDA achieves 62.26\% (best result).\relax }}{3}{table.caption.3}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Per-ticker performance comparison. Transformer achieves best results for NVDA (62.26\%), significantly outperforming LSTM baseline.\relax }}{3}{figure.caption.4}\protected@file@percent }
-\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{fig:per_ticker}{{1}{3}{Per-ticker performance comparison. Transformer achieves best results for NVDA (62.26\%), significantly outperforming LSTM baseline.\relax }{figure.caption.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Experiment 4: Feature Ablations}{3}{subsection.5.4}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Feature ablations reveal prediction collapse in technical-only model (std=0.0031).\relax }}{4}{table.caption.5}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Feature ablation study showing directional accuracy and return correlation. Sentiment-only features achieve best correlation (0.075), while technical-only features suffer from prediction collapse (std=0.0031).\relax }}{4}{figure.caption.6}\protected@file@percent }
-\newlabel{fig:feature_ablation}{{2}{4}{Feature ablation study showing directional accuracy and return correlation. Sentiment-only features achieve best correlation (0.075), while technical-only features suffer from prediction collapse (std=0.0031).\relax }{figure.caption.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Experiment 5: Multi-Class LSTM}{4}{subsection.5.5}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Multi-class LSTM suffers severe overfitting (92\% → 33\%).\relax }}{4}{table.caption.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}2026 Out-of-Sample Validation}{4}{subsection.5.6}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces 2026 validation shows -3.56\% degradation. NVDA is only ticker to improve.\relax }}{4}{table.caption.8}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces 2026 out-of-sample validation results. Overall degradation of -3.56\%, with NVDA being only ticker to improve (+0.72\%). AAPL shows largest degradation (-7.17\%), suggesting market regime change.\relax }}{4}{figure.caption.9}\protected@file@percent }
-\newlabel{fig:2026_validation}{{3}{4}{2026 out-of-sample validation results. Overall degradation of -3.56\%, with NVDA being only ticker to improve (+0.72\%). AAPL shows largest degradation (-7.17\%), suggesting market regime change.\relax }{figure.caption.9}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Critical Analysis}{4}{section.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Overfitting Analysis}{4}{subsection.6.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Class Imbalance}{4}{subsection.6.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Prediction Collapse}{4}{subsection.6.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Why NVDA is Most Predictable}{5}{subsection.6.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7}Discussion}{5}{section.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Deep Learning Architecture Decisions}{5}{subsection.7.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Generalization Challenges}{5}{subsection.7.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Limitations}{5}{subsection.7.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{5}{section.8}\protected@file@percent }
-\gdef \@abspage@last{7}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}LSTM Architecture}{2}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Transformer Architecture}{2}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Training Details}{2}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Results}{2}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Overall Performance}{2}{subsection.5.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Overall model performance. Both models perform below random baseline on 2026 test data.\relax }}{2}{table.caption.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Per-Ticker Results}{2}{subsection.5.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Per-ticker performance. Models perform identically on AAPL, AMZN, and NVDA. Only TSLA shows difference (+1.73\% for Transformer).\relax }}{2}{table.caption.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Class Imbalance Analysis}{3}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Generalization Analysis}{3}{subsection.5.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Validation-to-test degradation. Both models show massive performance drop, indicating poor generalization to 2026 market conditions.\relax }}{3}{table.caption.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Discussion}{3}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Why Both Models Fail}{3}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Why Models Perform Identically}{3}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Comparison to Literature}{3}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Limitations}{4}{subsection.6.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Lessons Learned}{4}{section.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Methodological Insights}{4}{subsection.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Practical Recommendations}{4}{subsection.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}When to Use LSTM vs Transformer}{4}{subsection.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{4}{section.8}\protected@file@percent }
+\gdef \@abspage@last{6}

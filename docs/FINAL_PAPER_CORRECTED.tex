@@ -26,7 +26,7 @@ Georgia Institute of Technology \\
 
 \begin{abstract}
 \small
-Stock price prediction remains challenging due to market noise and non-stationarity. We investigate whether deep learning models enhanced with sentiment analysis can improve next-day price direction prediction. We implement and train LSTM and Transformer architectures on three tech stocks (AAPL, NVDA, TSLA) using technical indicators combined with StockTwits sentiment. After discovering and fixing a critical data leakage issue in our initial experiments, we report corrected results with proper train/validation/test methodology. Key findings: (1) LSTM outperforms Transformer by +5.10\% (52.27\% vs 47.17\%), contrary to initial expectations; (2) data leakage inflated initial results by up to 20 percentage points; (3) severe class imbalance causes prediction collapse; (4) validation-to-test degradation (-6\% to -20\%) indicates poor generalization to 2026 market conditions; (5) Transformer requires more data than available (~415 samples insufficient). Our work demonstrates the critical importance of proper validation methodology and honest reporting of negative results in deep learning research.
+Stock price prediction remains challenging due to market noise and non-stationarity. We investigate whether deep learning models enhanced with sentiment analysis can improve next-day price direction prediction. We implement and train LSTM and Transformer architectures on four tech stocks (AAPL, AMZN, NVDA, TSLA) using technical indicators combined with StockTwits sentiment. After discovering and fixing two critical issues (data leakage and corrupted sentiment data), we report corrected results with proper train/validation/test methodology. Key findings: (1) Both models perform nearly identically (LSTM: 43.57\%, Transformer: 43.99\%), with Transformer having negligible advantage (+0.43\%); (2) data leakage inflated initial results by 8-12 percentage points; (3) severe class imbalance causes prediction collapse (models predict only majority class); (4) both models perform below random baseline (50\%) on 2026 test data; (5) validation-to-test degradation (-13\% to -15\%) indicates poor generalization. Our work demonstrates the critical importance of proper validation methodology, data quality verification, and honest reporting of negative results in deep learning research.
 \end{abstract}
 
 \section{Introduction}
@@ -39,15 +39,16 @@ Stock price prediction remains challenging due to market noise and non-stationar
 
 \textbf{Our approach:} We train deep learning models (LSTM and Transformer) to learn temporal patterns from sequences of financial and sentiment features. We compare architectures, analyze failure modes, and validate generalization on 2026 out-of-sample data.
 
-\textbf{A critical lesson learned:} Our initial experiments showed Transformer outperforming LSTM by +4.12\%. However, we discovered a data leakage issue where models were selected based on test set performance. After fixing this and using proper validation, results reversed: LSTM outperforms Transformer by +5.10\%. This paper reports the corrected results and emphasizes the importance of rigorous validation methodology.
+\textbf{A critical lesson learned:} Our initial experiments showed Transformer outperforming LSTM by +4.12\%. However, we discovered two critical issues: (1) data leakage where models were selected based on test set performance, and (2) corrupted sentiment data with all zero values. After fixing both issues and using proper validation with real sentiment scores, results changed dramatically: both models now perform nearly identically (Transformer +0.43\% advantage), and both perform below random baseline. This paper reports the corrected results and emphasizes the importance of rigorous validation methodology and data quality verification.
 
 \textbf{Key contributions:}
 \begin{itemize}
 \item Identification and correction of data leakage in model selection
-\item Honest comparison showing LSTM outperforms Transformer on limited data
+\item Discovery and fix of corrupted sentiment data (all zeros)
+\item Honest comparison showing both models struggle equally
 \item Analysis of class imbalance and prediction collapse
-\item Demonstration that proper validation can reverse conclusions
-\item Evidence that ~415 samples insufficient for Transformer
+\item Demonstration that proper validation and data quality checks can completely reverse conclusions
+\item Evidence that financial time series prediction is harder than initially apparent
 \end{itemize}
 
 \section{Related Work}
@@ -58,12 +59,12 @@ Stock price prediction remains challenging due to market noise and non-stationar
 
 \subsection{Dataset Description}
 
-We collected daily data for three large-cap technology stocks: AAPL, NVDA, and TSLA. (AMZN excluded due to insufficient data.)
+We collected daily data for four large-cap technology stocks: AAPL, AMZN, NVDA, and TSLA.
 
 \textbf{Training}: 2020-2022 (755 trading days, 80/20 train/val split)\\
 \textbf{Validation}: 2020-2022 (20\% holdout from training period)\\
 \textbf{Test}: 2026 (53-58 trading days, out-of-sample)\\
-\textbf{Total}: ~2,100 stock-days across 3 tickers
+\textbf{Total}: ~2,600 stock-days across 4 tickers
 
 \subsection{Data Collection Methodology}
 
@@ -171,19 +172,27 @@ We collected daily data for three large-cap technology stocks: AAPL, NVDA, and T
 
 \subsection{Data Leakage Discovery}
 
-During code review, we discovered that our initial training script was selecting the best model based on 2026 test set accuracy during training. This is a critical error because:
+During code review, we discovered two critical issues in our training scripts:
 
+\textbf{Issue 1: Data Leakage}
 \begin{enumerate}
-\item The model "peeks" at future test data during training
-\item Model selection is biased toward test set patterns
-\item Reported performance is inflated and unrealistic
+\item Models were selecting best checkpoint based on 2026 test set accuracy during training
+\item The model "peeked" at future test data during training
+\item Model selection was biased toward test set patterns
 \end{enumerate}
 
-\textbf{Impact:} After fixing this issue, our conclusions completely reversed.
+\textbf{Issue 2: Corrupted Sentiment Data}
+\begin{enumerate}
+\item Training sentiment file had all sentiment values as 0.0
+\item Models were training without actual sentiment signal
+\item Only message counts were non-zero
+\end{enumerate}
+
+\textbf{Impact:} After fixing both issues, our conclusions changed dramatically - from "Transformer wins by 4.12\%" to "both models perform identically and below baseline."
 
 \subsection{Experiment 1: LSTM Baseline (Corrected)}
 
-\textbf{Setup:} Train separate LSTM for each ticker using StockTwits sentiment with proper train/val/test split.
+\textbf{Setup:} Train separate LSTM for each ticker using StockTwits sentiment with proper train/val/test split and real sentiment scores.
 
 \begin{table}[h]
 \centering
@@ -192,16 +201,17 @@ During code review, we discovered that our initial training script was selecting
 \toprule
 Ticker & Val (2020-22) & Test (2026) & Degradation \\
 \midrule
-AAPL & 58.65\% & 48.28\% & -10.37\% \\
-NVDA & 61.54\% & 41.51\% & -20.03\% \\
-TSLA & 58.10\% & 51.72\% & -6.38\% \\
-\textbf{Avg} & \textbf{59.43\%} & \textbf{47.17\%} & \textbf{-12.26\%} \\
+AAPL & 59.62\% & 48.28\% & -11.34\% \\
+AMZN & 53.33\% & 41.38\% & -11.95\% \\
+NVDA & 62.50\% & 41.51\% & -20.99\% \\
+TSLA & 59.05\% & 43.10\% & -15.95\% \\
+\textbf{Avg} & \textbf{58.63\%} & \textbf{43.57\%} & \textbf{-15.06\%} \\
 \bottomrule
 \end{tabular}
-\caption{LSTM baseline with proper validation. Significant degradation from validation to test indicates poor generalization to 2026 market conditions.}
+\caption{LSTM baseline with proper validation and real sentiment. Massive degradation from validation to test indicates poor generalization to 2026 market conditions.}
 \end{table}
 
-\textbf{Analysis:} Models perform reasonably on validation set (~59\%) but degrade significantly on 2026 test data (-12.26\% average). NVDA shows worst degradation (-20\%), suggesting market regime change.
+\textbf{Analysis:} Models perform reasonably on validation set (~59\%) but degrade significantly on 2026 test data (-15.06\% average). NVDA shows worst degradation (-21\%), suggesting market regime change. All models perform below 50\% random baseline on test data.
 
 \subsection{Experiment 2: Transformer Model (Corrected)}
 
