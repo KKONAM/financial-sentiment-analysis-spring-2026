@@ -187,7 +187,7 @@ TSLA & 49.09\% & 44.83\% \\
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=\columnwidth]{figures/per_ticker_comparison.pdf}
+\includegraphics[width=\columnwidth]{transformer_figures/per_ticker_comparison.pdf}
 \caption{Per-ticker performance comparison across LSTM variants. Transformer achieves best results for NVDA (62.26\%).}
 \label{fig:per_ticker}
 \end{figure}
@@ -222,7 +222,7 @@ TSLA & 49.09\% & \textbf{55.17\%} & \textbf{+6.08\%} \\
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=\columnwidth]{figures/sentiment_impact.pdf}
+\includegraphics[width=\columnwidth]{transformer_figures/sentiment_impact.pdf}
 \caption{Impact of combining StockTwits and NewsAPI sentiment. TSLA shows largest improvement (+6.08\%), while AAPL degrades (-3.73\%).}
 \label{fig:sentiment_impact}
 \end{figure}
@@ -420,14 +420,14 @@ Transformer & Combined & \textbf{56.39\%} & 0.043 & 0.0152 & Best overall \\
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/feature_ablation.pdf}
+\includegraphics[width=\textwidth]{transformer_figures/feature_ablation.pdf}
 \caption{Feature ablation study showing directional accuracy and return correlation for different feature combinations. Sentiment-only features achieve best correlation (0.075), while technical-only features suffer from prediction collapse.}
 \label{fig:feature_ablation}
 \end{figure*}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/error_comparison.pdf}
+\includegraphics[width=\textwidth]{transformer_figures/error_comparison.pdf}
 \caption{Regression error (MAE and RMSE) comparison across models and feature sets. Technical-only features achieve lowest error but provide no directional signal.}
 \label{fig:error_comparison}
 \end{figure*}
@@ -483,21 +483,21 @@ Transformer & Combined & \textbf{56.39\%} & 0.043 & 0.0152 & Best overall \\
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/model_comparison.pdf}
+\includegraphics[width=0.9\textwidth]{transformer_figures/model_comparison.pdf}
 \caption{Overall model performance comparison. Trajectory LGBM and Gradient Boosting achieve best accuracy (59.54\% and 59.26\%), while Transformer is best deep learning model (56.39\%). Multi-class LSTM fails due to overfitting (33.22\%).}
 \label{fig:model_comparison}
 \end{figure*}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/trading_performance.pdf}
+\includegraphics[width=\textwidth]{transformer_figures/trading_performance.pdf}
 \caption{Trading strategy performance comparison. Gradient Boosting with confidence threshold achieves best return (7.10\%), win rate (59.26\%), and Sharpe ratio (4.43).}
 \label{fig:trading_performance}
 \end{figure*}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/2026_validation.pdf}
+\includegraphics[width=\textwidth]{transformer_figures/2026_validation.pdf}
 \caption{2026 out-of-sample validation results. Overall degradation of -3.56\%, with NVDA being only ticker to improve (+0.72\%). AAPL shows largest degradation (-7.17\%).}
 \label{fig:2026_validation}
 \end{figure*}
