@@ -189,15 +189,30 @@ def prepare_data(ticker: str, sentiment_df: pd.DataFrame,
 
 
 def train_transformer(X_train, y_train, X_test, y_test, ticker: str, output_dir: Path):
-    """Train Transformer model."""
+    """Train Transformer model with proper train/validation split.
+    
+    Args:
+        X_train: Training data from 2020-2022 (will be split into train/val)
+        y_train: Training labels from 2020-2022 (will be split into train/val)
+        X_test: Test data from 2026 (only used for final evaluation)
+        y_test: Test labels from 2026 (only used for final evaluation)
+    """
     
     print(f"\n{'='*60}")
     print(f"Training Transformer for {ticker}")
     print(f"{'='*60}")
     
+    # Split training data into train (80%) and validation (20%)
+    from sklearn.model_selection import train_test_split
+    X_train_split, X_val, y_train_split, y_val = train_test_split(
+        X_train, y_train, test_size=0.2, random_state=42, shuffle=False  # No shuffle to preserve time order
+    )
+    
     # Convert to tensors
-    X_train_t = torch.FloatTensor(X_train)
-    y_train_t = torch.FloatTensor(y_train)
+    X_train_t = torch.FloatTensor(X_train_split)
+    y_train_t = torch.FloatTensor(y_train_split)
+    X_val_t = torch.FloatTensor(X_val)
+    y_val_t = torch.FloatTensor(y_val)
     X_test_t = torch.FloatTensor(X_test)
     y_test_t = torch.FloatTensor(y_test)
     
@@ -220,13 +235,13 @@ def train_transformer(X_train, y_train, X_test, y_test, ticker: str, output_dir:
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     
     print(f"Model: {input_size} features -> {D_MODEL}d -> {N_HEADS} heads -> {N_LAYERS} layers")
-    print(f"Training samples: {len(X_train)}, Test samples: {len(X_test)}")
+    print(f"Training samples: {len(X_train_split)}, Validation samples: {len(X_val)}, Test samples (2026): {len(X_test)}")
     
     # Training loop
-    best_test_acc = 0
+    best_val_acc = 0
     patience_counter = 0
     train_losses = []
-    test_accs = []
+    val_accs = []
     
     for epoch in range(EPOCHS):
         model.train()
@@ -243,23 +258,23 @@ def train_transformer(X_train, y_train, X_test, y_test, ticker: str, output_dir:
         avg_train_loss = train_loss / len(train_loader)
         train_losses.append(avg_train_loss)
         
-        # Evaluate
+        # Evaluate on train and validation
         model.eval()
         with torch.no_grad():
             train_outputs = torch.sigmoid(model(X_train_t))
             train_preds = (train_outputs > 0.5).float()
             train_acc = (train_preds == y_train_t).float().mean().item()
             
-            test_outputs = torch.sigmoid(model(X_test_t))
-            test_preds = (test_outputs > 0.5).float()
-            test_acc = (test_preds == y_test_t).float().mean().item()
-            test_accs.append(test_acc)
+            val_outputs = torch.sigmoid(model(X_val_t))
+            val_preds = (val_outputs > 0.5).float()
+            val_acc = (val_preds == y_val_t).float().mean().item()
+            val_accs.append(val_acc)
         
-        # Early stopping
-        if test_acc > best_test_acc:
-            best_test_acc = test_acc
+        # Early stopping based on VALIDATION accuracy (not test!)
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
             patience_counter = 0
-            # Save best model
+            # Save best model based on validation performance
             best_model_path = output_dir / f'transformer_{ticker.lower()}.pt'
             torch.save(model.state_dict(), best_model_path)
         else:
@@ -269,17 +284,17 @@ def train_transformer(X_train, y_train, X_test, y_test, ticker: str, output_dir:
             print(f"Epoch {epoch+1}/{EPOCHS} - "
                   f"Loss: {avg_train_loss:.4f} - "
                   f"Train Acc: {train_acc:.4f} - "
-                  f"Test Acc: {test_acc:.4f} - "
-                  f"Best: {best_test_acc:.4f}")
+                  f"Val Acc: {val_acc:.4f} - "
+                  f"Best Val: {best_val_acc:.4f}")
         
         # Early stopping
         if patience_counter >= EARLY_STOPPING_PATIENCE:
             print(f"\nEarly stopping at epoch {epoch+1}")
             break
     
-    print(f"\n✓ Training complete. Best test accuracy: {best_test_acc:.4f}")
+    print(f"\n✓ Training complete. Best validation accuracy: {best_val_acc:.4f}")
     
-    # Load best model for final evaluation
+    # Load best model for final evaluation on 2026 test data
     model.load_state_dict(torch.load(best_model_path))
     model.eval()
     
@@ -288,8 +303,12 @@ def train_transformer(X_train, y_train, X_test, y_test, ticker: str, output_dir:
         test_preds = (test_outputs > 0.5).float().numpy()
         test_probs = test_outputs.numpy()
     
+    # Calculate test accuracy
+    test_acc = (test_preds.flatten() == y_test).mean()
+    print(f"\n2026 Out-of-Sample Test Accuracy: {test_acc:.4f}")
+    
     # Classification report
-    print(f"\nClassification Report:")
+    print(f"\nClassification Report (2026 Test Data):")
     print(classification_report(y_test, test_preds, target_names=['Down', 'Up']))
     
     # Plot training curves
@@ -301,11 +320,11 @@ def train_transformer(X_train, y_train, X_test, y_test, ticker: str, output_dir:
     ax1.set_title(f'{ticker} - Training Loss')
     ax1.grid(True, alpha=0.3)
     
-    ax2.plot(test_accs)
+    ax2.plot(val_accs)
     ax2.axhline(y=0.5, color='r', linestyle='--', label='Random Baseline')
     ax2.set_xlabel('Epoch')
-    ax2.set_ylabel('Test Accuracy')
-    ax2.set_title(f'{ticker} - Test Accuracy')
+    ax2.set_ylabel('Validation Accuracy')
+    ax2.set_title(f'{ticker} - Validation Accuracy')
     ax2.legend()
     ax2.grid(True, alpha=0.3)
     
@@ -314,7 +333,7 @@ def train_transformer(X_train, y_train, X_test, y_test, ticker: str, output_dir:
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
     plt.close()
     
-    return best_test_acc, test_preds, test_probs, y_test
+    return test_acc, test_preds, test_probs, y_test
 
 
 def main():

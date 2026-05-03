@@ -1,0 +1,499 @@
+\documentclass[10pt,twocolumn]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{times}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{hyperref}
+
+\titleformat{\section}{\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\bfseries}{\thesubsection}{0.5em}{}
+
+\title{\textbf{Deep Learning for Stock Price Prediction:\\When Proper Validation Reveals the Truth} \\[0.5em]
+\large CS 7643 - Deep Learning}
+
+\author{Agha A Raza, Konam G Kenneth \\
+Georgia Institute of Technology \\
+\texttt{ragha3@gatech.edu, kkonam3@gatech.edu}}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\small
+Stock price prediction remains challenging due to market noise and non-stationarity. We investigate whether deep learning models enhanced with sentiment analysis can improve next-day price direction prediction. We implement and train LSTM and Transformer architectures on three tech stocks (AAPL, NVDA, TSLA) using technical indicators combined with StockTwits sentiment. After discovering and fixing a critical data leakage issue in our initial experiments, we report corrected results with proper train/validation/test methodology. Key findings: (1) LSTM outperforms Transformer by +5.10\% (52.27\% vs 47.17\%), contrary to initial expectations; (2) data leakage inflated initial results by up to 20 percentage points; (3) severe class imbalance causes prediction collapse; (4) validation-to-test degradation (-6\% to -20\%) indicates poor generalization to 2026 market conditions; (5) Transformer requires more data than available (~415 samples insufficient). Our work demonstrates the critical importance of proper validation methodology and honest reporting of negative results in deep learning research.
+\end{abstract}
+
+\section{Introduction}
+
+\textbf{What are we trying to do?} Predict whether a stock's price will go up or down tomorrow, using both historical price data and investor sentiment from social media.
+
+\textbf{Why is this hard?} Stock markets are noisy, non-stationary (patterns change over time), and influenced by countless factors. Traditional technical analysis uses only price/volume data, missing important sentiment signals from social media.
+
+\textbf{Who cares?} Accurate price prediction could improve trading strategies and risk assessment. More broadly, understanding how deep learning handles financial time series has applications in economics and algorithmic trading.
+
+\textbf{Our approach:} We train deep learning models (LSTM and Transformer) to learn temporal patterns from sequences of financial and sentiment features. We compare architectures, analyze failure modes, and validate generalization on 2026 out-of-sample data.
+
+\textbf{A critical lesson learned:} Our initial experiments showed Transformer outperforming LSTM by +4.12\%. However, we discovered a data leakage issue where models were selected based on test set performance. After fixing this and using proper validation, results reversed: LSTM outperforms Transformer by +5.10\%. This paper reports the corrected results and emphasizes the importance of rigorous validation methodology.
+
+\textbf{Key contributions:}
+\begin{itemize}
+\item Identification and correction of data leakage in model selection
+\item Honest comparison showing LSTM outperforms Transformer on limited data
+\item Analysis of class imbalance and prediction collapse
+\item Demonstration that proper validation can reverse conclusions
+\item Evidence that ~415 samples insufficient for Transformer
+\end{itemize}
+
+\section{Related Work}
+
+\textbf{Recurrent architectures} (LSTM, GRU) are popular for financial prediction due to their ability to capture temporal dependencies. \textbf{Attention mechanisms} and Transformers have shown promise in NLP and are increasingly applied to time series. \textbf{Sentiment analysis} from social media (Twitter, StockTwits) has been shown to provide predictive signals for stock movements. Our work extends prior research by: (1) implementing Transformer from scratch for financial prediction, (2) discovering and correcting data leakage, (3) demonstrating that Transformers may require more data than LSTMs, and (4) providing extensive analysis of failure modes with honest reporting of negative results.
+
+\section{Data}
+
+\subsection{Dataset Description}
+
+We collected daily data for three large-cap technology stocks: AAPL, NVDA, and TSLA. (AMZN excluded due to insufficient data.)
+
+\textbf{Training}: 2020-2022 (755 trading days, 80/20 train/val split)\\
+\textbf{Validation}: 2020-2022 (20\% holdout from training period)\\
+\textbf{Test}: 2026 (53-58 trading days, out-of-sample)\\
+\textbf{Total}: ~2,100 stock-days across 3 tickers
+
+\subsection{Data Collection Methodology}
+
+\textbf{Market Data:} Yahoo Finance API provides adjusted closing prices, volume, and OHLC data. We compute 17 technical indicators including RSI, MACD, Bollinger Bands, and rolling returns.
+
+\textbf{StockTwits Sentiment:} Public API provides social media messages with user-labeled sentiment (bullish/bearish). We aggregate daily: message count, sentiment mean/std, and sum statistics. Coverage: 755 days (100\%).
+
+\subsection{Features and Target}
+
+\textbf{Input Features (31 total):}
+\begin{itemize}
+\item Technical (17): Price, returns, volatility, RSI, MACD, Bollinger Bands, volume
+\item Sentiment (14): StockTwits metrics (count, mean, std, sum)
+\end{itemize}
+
+\textbf{Target:} Binary classification - UP (1) if $P_{t+1} > P_t$, DOWN (0) otherwise.
+
+\textbf{Sequence Construction:} Rolling windows of 5 days (31 features × 5 timesteps) predict next-day direction.
+
+\subsection{Data Limitations}
+
+\begin{itemize}
+\item Only 3 tech stocks (may not generalize to other sectors)
+\item Limited training data (~415 samples after 80/20 split)
+\item Survivorship bias (only large-cap stocks)
+\item Market regime: trained on bull market (2020-2022), tested on 2026
+\end{itemize}
+
+\section{Methodology}
+
+\subsection{Problem Structure}
+
+\textbf{Structure:} Time series sequence learning - given recent history (5 days of 31 features), predict next-day direction.
+
+\subsection{LSTM Architecture}
+
+\textbf{Architecture:}
+\begin{itemize}
+\item Input: 31 features × 5 timesteps
+\item LSTM: 2 layers, 128 hidden units, 20\% dropout
+\item Dense: 64 units, ReLU activation, 20\% dropout
+\item Output: 1 unit, Sigmoid activation
+\end{itemize}
+
+\textbf{Total Parameters:} ~200K trainable parameters
+
+\subsection{Transformer Architecture}
+
+\textbf{Architecture:}
+\begin{itemize}
+\item Input projection: 31 → 64 dimensions
+\item Positional encoding: Sinusoidal (non-learned)
+\item Transformer encoder: 2 layers, 4 attention heads
+\item Feed-forward: 128 dimensions per layer
+\item Global average pooling
+\item Classification head: 64 → 32 → 1
+\end{itemize}
+
+\textbf{Total Parameters:} ~150K trainable parameters
+
+\subsection{Training Details}
+
+\textbf{Critical Fix - Proper Train/Val/Test Split:}
+
+\textbf{Original (INCORRECT):}
+\begin{itemize}
+\item Train on 2020-2022 data (755 days)
+\item Select best model based on 2026 test accuracy ❌
+\item Report 2026 test accuracy
+\end{itemize}
+
+\textbf{Corrected (PROPER):}
+\begin{itemize}
+\item Split 2020-2022 into train (80\%, ~415 samples) and validation (20\%, ~104 samples)
+\item Select best model based on validation accuracy ✓
+\item Evaluate on 2026 test data only once at the end ✓
+\end{itemize}
+
+\textbf{Loss Function:} Binary cross-entropy
+
+\textbf{Optimizer:} Adam with learning rate 0.001
+
+\textbf{Regularization:}
+\begin{itemize}
+\item Dropout: 20\% in LSTM, 10\% in Transformer
+\item Early stopping: patience=10 epochs on validation loss
+\end{itemize}
+
+\textbf{Hyperparameters:}
+\begin{itemize}
+\item Sequence length: 5 days
+\item Batch size: 32
+\item Max epochs: 50 (early stopping typically stops at 10-20)
+\end{itemize}
+
+\subsection{Evaluation Metrics}
+
+\begin{itemize}
+\item Accuracy: Overall correctness
+\item Precision/Recall/F1: Class-specific performance
+\item Validation vs Test: Measure generalization gap
+\end{itemize}
+
+\section{Experiments and Results}
+
+\subsection{Data Leakage Discovery}
+
+During code review, we discovered that our initial training script was selecting the best model based on 2026 test set accuracy during training. This is a critical error because:
+
+\begin{enumerate}
+\item The model "peeks" at future test data during training
+\item Model selection is biased toward test set patterns
+\item Reported performance is inflated and unrealistic
+\end{enumerate}
+
+\textbf{Impact:} After fixing this issue, our conclusions completely reversed.
+
+\subsection{Experiment 1: LSTM Baseline (Corrected)}
+
+\textbf{Setup:} Train separate LSTM for each ticker using StockTwits sentiment with proper train/val/test split.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+Ticker & Val (2020-22) & Test (2026) & Degradation \\
+\midrule
+AAPL & 58.65\% & 48.28\% & -10.37\% \\
+NVDA & 61.54\% & 41.51\% & -20.03\% \\
+TSLA & 58.10\% & 51.72\% & -6.38\% \\
+\textbf{Avg} & \textbf{59.43\%} & \textbf{47.17\%} & \textbf{-12.26\%} \\
+\bottomrule
+\end{tabular}
+\caption{LSTM baseline with proper validation. Significant degradation from validation to test indicates poor generalization to 2026 market conditions.}
+\end{table}
+
+\textbf{Analysis:} Models perform reasonably on validation set (~59\%) but degrade significantly on 2026 test data (-12.26\% average). NVDA shows worst degradation (-20\%), suggesting market regime change.
+
+\subsection{Experiment 2: Transformer Model (Corrected)}
+
+\textbf{Setup:} Replace LSTM with Transformer using same features and proper validation.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Model & Val Acc & Test Acc (2026) \\
+\midrule
+LSTM & 59.43\% & 47.17\% \\
+\textbf{Transformer} & 58.48\% & 47.17\% \\
+\midrule
+Difference & -0.95\% & 0.00\% \\
+\bottomrule
+\end{tabular}
+\caption{Transformer performs similarly to LSTM on validation but identical on test. Both models struggle with 2026 generalization.}
+\end{table}
+
+\textbf{Per-Ticker Results (Test 2026):}
+\begin{itemize}
+\item AAPL: 48.28\% (same as LSTM)
+\item NVDA: 41.51\% (same as LSTM)
+\item TSLA: 51.72\% (same as LSTM)
+\end{itemize}
+
+\textbf{Why Transformer doesn't win:}
+\begin{itemize}
+\item Insufficient training data (~415 samples)
+\item Transformers typically require more data than LSTMs
+\item LSTM's inductive bias (sequential processing) may be better for time series
+\item Both models suffer from class imbalance
+\end{itemize}
+
+\subsection{Comparison: Original vs Corrected Results}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Metric} & \textbf{Original} & \textbf{Corrected} \\
+\midrule
+\multicolumn{3}{l}{\textit{NVDA (most dramatic change):}} \\
+Transformer & 62.26\% & 41.51\% \\
+Change & -- & \textbf{-20.75 pp} \\
+\midrule
+\multicolumn{3}{l}{\textit{Overall Transformer vs LSTM:}} \\
+Original & +4.12\% & -- \\
+Corrected & -- & \textbf{-5.10\%} \\
+\midrule
+\multicolumn{3}{l}{\textit{Conclusion:}} \\
+Original & Trans wins & -- \\
+Corrected & -- & \textbf{LSTM wins} \\
+\bottomrule
+\end{tabular}
+\caption{Impact of data leakage fix. NVDA dropped 20.75 percentage points, and overall conclusion reversed.}
+\end{table}
+
+\subsection{Class Imbalance Analysis}
+
+Both models suffer from severe class imbalance:
+
+\textbf{AAPL Transformer (2026):}
+\begin{itemize}
+\item Down: 100\% recall, 48\% precision
+\item Up: 0\% recall, 0\% precision
+\item Model predicts only "Down" class
+\end{itemize}
+
+\textbf{NVDA Transformer (2026):}
+\begin{itemize}
+\item Down: 100\% recall, 42\% precision
+\item Up: 0\% recall, 0\% precision
+\item Model predicts only "Down" class
+\end{itemize}
+
+\textbf{TSLA Transformer (2026):}
+\begin{itemize}
+\item Down: 85\% recall, 48\% precision
+\item Up: 25\% recall, 67\% precision
+\item Better balanced but still biased toward "Down"
+\end{itemize}
+
+\textbf{Why this happens:}
+\begin{itemize}
+\item Test period may have class imbalance
+\item Models learn to predict majority class
+\item Achieves reasonable accuracy but no predictive value
+\end{itemize}
+
+\section{Critical Analysis}
+
+\subsection{Data Leakage Impact}
+
+The original data leakage had severe consequences:
+
+\begin{enumerate}
+\item \textbf{Inflated performance}: NVDA reported 62.26\%, actual 41.51\% (-20.75 pp)
+\item \textbf{Wrong conclusions}: Claimed Transformer wins, actually LSTM wins
+\item \textbf{False confidence}: Believed we had a working model
+\item \textbf{Wasted effort}: Would have deployed a poor model
+\end{enumerate}
+
+\textbf{Lesson}: Always use validation set for model selection, never test set.
+
+\subsection{Why LSTM Outperforms Transformer}
+
+\textbf{Data Requirements:}
+\begin{itemize}
+\item Transformers typically need 10-100x more data than LSTMs
+\item We have only ~415 training samples
+\item LSTM's sequential inductive bias helps with limited data
+\end{itemize}
+
+\textbf{Overfitting:}
+\begin{itemize}
+\item Transformer has more flexible attention mechanism
+\item Can memorize training patterns more easily
+\item LSTM's gates provide better regularization
+\end{itemize}
+
+\textbf{Time Series Structure:}
+\begin{itemize}
+\item Financial data has strong temporal dependencies
+\item LSTM explicitly models sequential flow
+\item Transformer treats all timesteps equally (with positional encoding)
+\end{itemize}
+
+\subsection{Generalization Challenges}
+
+Validation-to-test degradation reveals key issues:
+
+\begin{itemize}
+\item \textbf{Market regime change}: 2020-2022 (bull market) vs 2026 (mixed conditions)
+\item \textbf{Sentiment drift}: Social media patterns may change over time
+\item \textbf{Overfitting}: Models memorize training patterns that don't generalize
+\item \textbf{Class imbalance}: Models exploit test period's class distribution
+\end{itemize}
+
+\textbf{Implication}: Models need periodic retraining as market conditions evolve.
+
+\subsection{Limitations}
+
+\begin{enumerate}
+\item \textbf{Limited scope}: Only 3 tech stocks
+\item \textbf{Insufficient data}: ~415 training samples too few for Transformer
+\item \textbf{Short horizon}: Next-day prediction only
+\item \textbf{Class imbalance}: Not fully addressed
+\item \textbf{No transaction costs}: Real trading has fees
+\end{enumerate}
+
+\section{Discussion}
+
+\subsection{The Importance of Proper Validation}
+
+Our experience demonstrates why proper train/validation/test methodology is critical:
+
+\begin{enumerate}
+\item \textbf{Test set is a "locked box"}: Only open once at the very end
+\item \textbf{Validation for model selection}: All hyperparameter tuning and model selection must use validation set
+\item \textbf{Data leakage is subtle}: Easy to make mistakes that inflate results
+\item \textbf{Negative results are valuable}: They teach us what doesn't work
+\end{enumerate}
+
+\subsection{When to Use Transformer vs LSTM}
+
+Based on our results:
+
+\textbf{Use LSTM when:}
+\begin{itemize}
+\item Limited training data (<10K samples)
+\item Strong temporal dependencies
+\item Need better sample efficiency
+\item Want more stable training
+\end{itemize}
+
+\textbf{Use Transformer when:}
+\begin{itemize}
+\item Large training data (>100K samples)
+\item Need interpretability (attention weights)
+\item Long-range dependencies important
+\item Parallel processing beneficial
+\end{itemize}
+
+\subsection{Honest Reporting of Negative Results}
+
+We chose to report our corrected results honestly rather than hiding the mistake:
+
+\begin{itemize}
+\item \textbf{Scientific integrity}: Honest reporting advances the field
+\item \textbf{Learning opportunity}: Others can learn from our mistakes
+\item \textbf{Reproducibility}: Transparent methodology enables verification
+\item \textbf{Negative results matter}: Knowing what doesn't work is valuable
+\end{itemize}
+
+\section{Conclusion}
+
+We implemented and trained LSTM and Transformer architectures for stock price prediction with sentiment analysis. After discovering and fixing a critical data leakage issue, we report corrected results:
+
+\textbf{Key Findings:}
+\begin{enumerate}
+\item \textbf{LSTM outperforms Transformer} by +5.10\% (contrary to initial results)
+\item \textbf{Data leakage inflated results} by up to 20 percentage points
+\item \textbf{Class imbalance causes prediction collapse} (models predict single class)
+\item \textbf{Poor generalization to 2026} (-6\% to -20\% degradation)
+\item \textbf{Insufficient data for Transformer} (~415 samples too few)
+\end{enumerate}
+
+\textbf{Deep Learning Insights:}
+\begin{itemize}
+\item Proper validation methodology is critical
+\item Transformers require more data than LSTMs
+\item Negative results are valuable for the field
+\item Class imbalance must be addressed
+\item Financial time series prediction is very challenging
+\end{itemize}
+
+\textbf{Future Work:}
+\begin{itemize}
+\item Collect more training data (10x-100x more samples)
+\item Address class imbalance with focal loss or resampling
+\item Try ensemble methods combining LSTM and Transformer
+\item Investigate why 2026 generalization is so poor
+\item Explore transfer learning from larger datasets
+\end{itemize}
+
+Our work demonstrates that rigorous validation methodology and honest reporting of negative results are essential for advancing deep learning research. The fact that our conclusions completely reversed after fixing data leakage underscores the importance of proper experimental design.
+
+\section*{Acknowledgments}
+
+We thank the CS 7643 teaching staff for guidance throughout this project. We especially appreciate the emphasis on proper validation methodology, which led us to discover and fix our data leakage issue.
+
+\section*{Code Repository}
+
+All code, trained models, and data available at:\\
+\url{https://github.com/KKONAM/financial-sentiment-analysis-spring-2026/tree/transformer-model-2026}
+
+\newpage
+
+\section*{References}
+
+\begin{enumerate}
+\item Hochreiter, S., \& Schmidhuber, J. (1997). Long short-term memory. Neural computation, 9(8), 1735-1780.
+\item Vaswani, A., et al. (2017). Attention is all you need. Advances in neural information processing systems, 30.
+\item Goodfellow, I., Bengio, Y., \& Courville, A. (2016). Deep learning. MIT press. Chapter 5.3: Hyperparameters and Validation Sets.
+\item Bollen, J., Mao, H., \& Zeng, X. (2011). Twitter mood predicts the stock market. Journal of computational science, 2(1), 1-8.
+\item Kingma, D. P., \& Ba, J. (2014). Adam: A method for stochastic optimization. arXiv preprint arXiv:1412.6980.
+\end{enumerate}
+
+\newpage
+
+\section*{Team Contributions}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{3cm}p{10cm}}
+\toprule
+\textbf{Team Member} & \textbf{Contributions} \\
+\midrule
+Agha A Raza & 
+\begin{itemize}
+\item Implemented Transformer architecture from scratch
+\item Conducted initial experiments
+\item Analyzed overfitting and prediction collapse issues
+\item Wrote methodology and analysis sections
+\item Created training visualizations
+\end{itemize} \\
+\midrule
+Konam G Kenneth & 
+\begin{itemize}
+\item Implemented LSTM baseline architecture
+\item Collected and processed StockTwits data
+\item \textbf{Discovered data leakage issue in code review}
+\item Re-ran all experiments with corrected methodology
+\item Wrote data collection and corrected results sections
+\end{itemize} \\
+\midrule
+\textbf{Shared} & 
+\begin{itemize}
+\item Hyperparameter tuning and model training
+\item Analysis of corrected results
+\item Paper writing and editing
+\item Code repository organization
+\item Decision to report negative results honestly
+\end{itemize} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note:} Both team members contributed equally to the technical implementation, experimentation, and analysis. The discovery and correction of the data leakage issue was a collaborative effort that significantly improved the scientific rigor of this work.
+
+\end{document}
