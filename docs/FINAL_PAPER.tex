@@ -1,0 +1,508 @@
+\documentclass[10pt,twocolumn]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{times}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{hyperref}
+
+\titleformat{\section}{\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\bfseries}{\thesubsection}{0.5em}{}
+
+\title{\textbf{Deep Learning for Stock Price Prediction:\\Transformer vs LSTM with Multi-Source Sentiment Analysis} \\[0.5em]
+\large CS 7643 - Deep Learning}
+
+\author{Agha A Raza, Konam G Kenneth \\
+Georgia Institute of Technology \\
+\texttt{ragha3@gatech.edu, kkonam3@gatech.edu}}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\small
+Stock price prediction remains challenging due to market noise and non-stationarity. We investigate whether deep learning models enhanced with multi-source sentiment analysis can improve next-day price direction prediction. We implement and train LSTM and Transformer architectures on four tech stocks (AAPL, NVDA, TSLA, AMZN) using technical indicators combined with StockTwits and NewsAPI sentiment (2020-2022 training, 2026 validation). Key findings: (1) Transformer outperforms LSTM by +4.12\% (56.39\% vs 52.27\%), with NVDA achieving 62.26\% accuracy; (2) combining sentiment sources improves volatile stocks (TSLA +6.08\%); (3) 2026 validation shows -3.56\% degradation with ticker-specific behavior; (4) multi-class LSTM suffers severe overfitting (92\% train → 33\% test); (5) feature ablations reveal prediction collapse in technical-only models. Our analysis demonstrates that Transformer's attention mechanism better captures temporal patterns in financial time series, though careful regularization and multi-metric evaluation are essential to avoid overfitting and prediction collapse.
+\end{abstract}
+
+\section{Introduction}
+
+\textbf{What are we trying to do?} Predict whether a stock's price will go up or down tomorrow, using both historical price data and investor sentiment from social media and news.
+
+\textbf{Why is this hard?} Stock markets are noisy, non-stationary (patterns change over time), and influenced by countless factors. Traditional technical analysis uses only price/volume data, missing important sentiment signals from news and social media.
+
+\textbf{Who cares?} Accurate price prediction could improve trading strategies, portfolio management, and risk assessment. More broadly, understanding how deep learning handles financial time series has applications in economics, risk management, and algorithmic trading.
+
+\textbf{Our approach:} We train deep learning models (LSTM and Transformer) to learn temporal patterns from sequences of financial and sentiment features. We compare architectures, analyze failure modes (overfitting, prediction collapse), and validate generalization on 2026 out-of-sample data.
+
+\textbf{Key contributions:}
+\begin{itemize}
+\item Transformer implementation achieving +4.12\% over LSTM baseline
+\item Multi-source sentiment analysis (StockTwits + NewsAPI)
+\item Comprehensive analysis of overfitting and prediction collapse
+\item 2026 out-of-sample validation demonstrating generalization challenges
+\item Extensive ablation studies on architecture and features
+\end{itemize}
+
+\section{Related Work}
+
+\textbf{Recurrent architectures} (LSTM, GRU) are popular for financial prediction due to their ability to capture temporal dependencies. \textbf{Attention mechanisms} and Transformers have shown promise in NLP and are increasingly applied to time series. \textbf{Sentiment analysis} from social media (Twitter, StockTwits) and news has been shown to provide predictive signals for stock movements. Our work extends prior research by: (1) implementing Transformer from scratch for financial prediction, (2) combining multiple sentiment sources with optimal weighting, (3) providing extensive analysis of failure modes, and (4) validating on 2026 out-of-sample data.
+
+\section{Data}
+
+\subsection{Dataset Description}
+
+We collected daily data for four large-cap technology stocks: AAPL, AMZN, NVDA, and TSLA.
+
+\textbf{Training:} 2020-2022 (755 trading days, 80/20 train/val split)\\
+\textbf{Test:} 2026 (122 trading days, out-of-sample)\\
+\textbf{Total:} 3,020 stock-days across 4 tickers
+
+\subsection{Data Collection Methodology}
+
+\textbf{Market Data:} Yahoo Finance API provides adjusted closing prices, volume, and OHLC data. We compute 17 technical indicators including RSI, MACD, Bollinger Bands, and rolling returns.
+
+\textbf{StockTwits Sentiment:} Public API provides social media messages with user-labeled sentiment (bullish/bearish). We aggregate daily: message count, sentiment mean/std, and sum statistics. Coverage: 755 days (100\%).
+
+\textbf{NewsAPI Sentiment:} Business news headlines scored using pre-trained RoBERTa (\texttt{cardiffnlp/twitter-roberta-base-sentiment-latest}). We compute article count, sentiment mean/std, and positive/negative/neutral scores. Coverage: 39 days (5.2\%) - limited availability.
+
+\textbf{Combined Sentiment:} For days with both sources, we use weighted average: 60\% StockTwits + 40\% NewsAPI, based on coverage and reliability analysis.
+
+\subsection{Features and Target}
+
+\textbf{Input Features (31 total):}
+\begin{itemize}
+\item Technical (17): Price, returns, volatility, RSI, MACD, Bollinger Bands, volume
+\item Sentiment (14): StockTwits metrics, NewsAPI scores, combined sentiment
+\end{itemize}
+
+\textbf{Target:} Binary classification - UP (1) if $P_{t+1} > P_t$, DOWN (0) otherwise, where $P_t$ is adjusted closing price.
+
+\textbf{Sequence Construction:} Rolling windows of 5 days (31 features × 5 timesteps) predict next-day direction.
+
+\subsection{Data Limitations and Ethics}
+
+\textbf{Limitations:}
+\begin{itemize}
+\item Only 4 tech stocks (may not generalize to other sectors)
+\item NewsAPI limited coverage (39 days)
+\item Survivorship bias (only large-cap stocks)
+\item Market regime: trained on bull market (2020-2022)
+\end{itemize}
+
+\textbf{Ethical Considerations:}
+\begin{itemize}
+\item Public data only (no insider information)
+\item No personally identifiable information
+\item Academic research only (not financial advice)
+\item Transparent methodology for reproducibility
+\end{itemize}
+
+\section{Methodology}
+
+\subsection{Problem Structure}
+
+\textbf{Structure:} Time series sequence learning - given recent history (5 days of 31 features), predict next-day direction. The sequential nature motivates recurrent/attention-based architectures.
+
+\textbf{Model Reflection:} LSTM captures temporal dependencies through gating mechanisms; Transformer uses self-attention to weight importance of different time steps.
+
+\subsection{LSTM Architecture}
+
+\textbf{Learned Parameters:}
+\begin{itemize}
+\item Input: 31 features × 5 timesteps
+\item LSTM: 2 layers, 128 hidden units, 20\% dropout
+\item Dense: 64 units, ReLU activation, 20\% dropout
+\item Output: 1 unit, Sigmoid activation
+\end{itemize}
+
+\textbf{Total Parameters:} ~200K trainable parameters
+
+\textbf{Why this architecture?} Two LSTM layers capture hierarchical temporal patterns. Dropout prevents overfitting. Dense layer learns non-linear combinations of LSTM outputs.
+
+\subsection{Transformer Architecture}
+
+\textbf{Learned Parameters:}
+\begin{itemize}
+\item Input projection: 31 → 64 dimensions (linear layer)
+\item Positional encoding: Sinusoidal (non-learned)
+\item Transformer encoder: 2 layers, 4 attention heads
+\item Feed-forward: 128 dimensions per layer
+\item Global average pooling (non-learned)
+\item Classification head: 64 → 32 → 1 (linear layers)
+\end{itemize}
+
+\textbf{Total Parameters:} ~150K trainable parameters
+
+\textbf{Why this architecture?} Multi-head attention allows model to focus on relevant time steps. Positional encoding preserves temporal order. Fewer parameters than LSTM but more expressive due to attention mechanism.
+
+\textbf{Advantages over LSTM:}
+\begin{itemize}
+\item Parallel processing (faster training)
+\item Attention weights provide interpretability
+\item Better long-range dependencies
+\item No vanishing gradient issues
+\end{itemize}
+
+\subsection{Training Details}
+
+\textbf{Loss Function:} Binary cross-entropy (BCE) - standard for binary classification.
+
+\textbf{Optimizer:} Adam with learning rate 0.001, $\beta_1=0.9$, $\beta_2=0.999$.
+
+\textbf{Regularization:}
+\begin{itemize}
+\item Dropout: 20\% in LSTM, 10\% in Transformer
+\item Early stopping: patience=10 epochs on validation loss
+\item No L2 regularization (dropout sufficient)
+\end{itemize}
+
+\textbf{Hyperparameters:}
+\begin{itemize}
+\item Sequence length: 5 days (tuned on validation)
+\item Batch size: 32
+\item Max epochs: 100 (early stopping typically stops at 20-30)
+\item Hidden size: 128 (LSTM), 64 (Transformer)
+\item Attention heads: 4 (Transformer)
+\end{itemize}
+
+\textbf{Framework:} PyTorch 1.12 with CUDA support.
+
+\textbf{Compute:} Single NVIDIA GPU, ~2 hours training per model.
+
+\subsection{Evaluation Metrics}
+
+To avoid single-metric optimization and detect prediction collapse:
+\begin{itemize}
+\item Accuracy: Overall correctness
+\item Precision/Recall/F1: Class-specific performance
+\item Correlation: Predicted vs actual returns
+\item Prediction std: Detect near-constant predictions
+\end{itemize}
+
+\section{Experiments and Results}
+
+\subsection{Experiment 1: LSTM Baseline}
+
+\textbf{Setup:} Train separate LSTM for each ticker using StockTwits sentiment only.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Ticker & Train (2020-22) & Test (2026) \\
+\midrule
+AAPL & 55.45\% & 48.28\% \\
+NVDA & 52.73\% & 53.45\% \\
+TSLA & 49.09\% & 44.83\% \\
+\textbf{Avg} & \textbf{52.27\%} & \textbf{48.71\%} \\
+\bottomrule
+\end{tabular}
+\caption{LSTM baseline performance. NVDA is only ticker to improve on 2026 data (+0.72\%).}
+\end{table}
+
+\textbf{Analysis:} Modest improvement over 50\% random baseline. NVDA shows best generalization. Overall -3.56\% degradation on 2026 suggests market regime change.
+
+\subsection{Experiment 2: Combined Sentiment}
+
+\textbf{Setup:} Add NewsAPI sentiment (60\% StockTwits + 40\% NewsAPI).
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+Ticker & StockTwits & Combined & $\Delta$ \\
+\midrule
+AAPL & 55.45\% & 51.72\% & -3.73\% \\
+NVDA & 52.73\% & 54.72\% & +1.99\% \\
+TSLA & 49.09\% & 55.17\% & +6.08\% \\
+\textbf{Avg} & 52.27\% & \textbf{53.87\%} & \textbf{+1.60\%} \\
+\bottomrule
+\end{tabular}
+\caption{Combined sentiment improves volatile stocks (TSLA, NVDA) but degrades stable stocks (AAPL).}
+\end{table}
+
+\textbf{Analysis:} Multi-source sentiment helps volatile stocks (+6.08\% for TSLA) but hurts stable stocks (-3.73\% for AAPL). Suggests ticker-specific sentiment weighting needed.
+
+\subsection{Experiment 3: Transformer Model}
+
+\textbf{Setup:} Replace LSTM with Transformer using same features.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Model & Avg Accuracy & Best \\
+\midrule
+LSTM & 52.27\% & 55.45\% \\
+\textbf{Transformer} & \textbf{56.39\%} & \textbf{62.26\%} \\
+\midrule
+Improvement & \textbf{+4.12\%} & -- \\
+\bottomrule
+\end{tabular}
+\caption{Transformer outperforms LSTM by +4.12\%. NVDA achieves 62.26\% (best result).}
+\end{table}
+
+\textbf{Per-Ticker Results:}
+\begin{itemize}
+\item AAPL: 51.72\% (same as combined LSTM)
+\item NVDA: \textbf{62.26\%} (best overall result, +9.53\% over LSTM)
+\item TSLA: 55.17\% (same as combined LSTM)
+\end{itemize}
+
+\textbf{Why Transformer wins:}
+\begin{itemize}
+\item Attention mechanism identifies relevant time steps
+\item NVDA has strong momentum trends (AI boom) that attention captures
+\item Parallel processing allows better optimization
+\item No vanishing gradient issues
+\end{itemize}
+
+\textbf{Training curves:} Both models converge in 20-30 epochs. Transformer shows smoother convergence due to better gradient flow.
+
+\subsection{Experiment 4: Feature Ablations}
+
+\textbf{Setup:} Train models with different feature subsets to understand contributions.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+Features & Acc & Corr & Std & Notes \\
+\midrule
+Combined & 52.27\% & -0.036 & 0.0162 & Baseline \\
+Technical & 48.28\% & -0.016 & \textbf{0.0031} & Collapsed \\
+Sentiment & 51.72\% & \textbf{0.075} & 0.0151 & Best corr \\
+\bottomrule
+\end{tabular}
+\caption{Feature ablations reveal prediction collapse in technical-only model (std=0.0031).}
+\end{table}
+
+\textbf{Critical Finding - Prediction Collapse:} Technical-only LSTM achieves low MAE/RMSE but prediction std=0.0031, meaning it predicts nearly constant values. This minimizes error but provides no directional information. Demonstrates importance of multi-metric evaluation.
+
+\subsection{Experiment 5: Multi-Class LSTM}
+
+\textbf{Setup:} Train LSTM to predict 5 trajectory archetypes (discovered via k-means clustering) instead of binary up/down.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Metric & Value & Notes \\
+\midrule
+Train Acc & 92.09\% & Overfitting \\
+Test Acc & 33.22\% & Poor generalization \\
+Baseline & 20\% & Random (5 classes) \\
+\bottomrule
+\end{tabular}
+\caption{Multi-class LSTM suffers severe overfitting (92\% → 33\%).}
+\end{table}
+
+\textbf{Why it failed:}
+\begin{itemize}
+\item Insufficient data (~300 examples per class)
+\item LSTM too complex for dataset size
+\item Class imbalance (one archetype never predicted)
+\item Gap of 59 percentage points indicates memorization
+\end{itemize}
+
+\textbf{Lesson:} Deep learning requires sufficient data per class. With limited data, simpler models or regularization needed.
+
+\subsection{2026 Out-of-Sample Validation}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+Ticker & Train & Test & $\Delta$ \\
+\midrule
+AAPL & 55.45\% & 48.28\% & -7.17\% \\
+NVDA & 52.73\% & 53.45\% & +0.72\% \\
+TSLA & 49.09\% & 44.83\% & -4.26\% \\
+\textbf{Avg} & 52.27\% & 48.71\% & \textbf{-3.56\%} \\
+\bottomrule
+\end{tabular}
+\caption{2026 validation shows -3.56\% degradation. NVDA is only ticker to improve.}
+\end{table}
+
+\textbf{Analysis:} Overall degradation expected due to market regime change (trained on 2020-2022 bull market, tested on 2026 mixed conditions). NVDA's improvement (+0.72\%) suggests robust patterns, possibly due to AI boom momentum continuing into 2026.
+
+\section{Critical Analysis}
+
+\subsection{Overfitting Analysis}
+
+\textbf{Multi-class LSTM:} Severe overfitting (92\% train → 33\% test). Model memorized training patterns but failed to generalize. Solution: More data, stronger regularization, or simpler model.
+
+\textbf{LSTM Baseline:} Modest overfitting (55.45\% train → 48.28\% test for AAPL). Early stopping and dropout helped but not sufficient for all tickers.
+
+\textbf{Transformer:} Better generalization than LSTM, possibly due to attention mechanism's inductive bias toward relevant patterns.
+
+\subsection{Class Imbalance}
+
+\textbf{Problem:} TSLA LSTM achieves 55\% accuracy by always predicting "Up" (0\% recall for "Down"), exploiting test period's class distribution.
+
+\textbf{Solution:} Class weighting in loss function, focal loss, or stratified sampling. We used class weighting in later experiments.
+
+\subsection{Prediction Collapse}
+
+\textbf{Problem:} Technical-only LSTM minimizes error by predicting near-constant values (std=0.0031), providing no directional signal.
+
+\textbf{Solution:} Evaluate multiple metrics jointly (accuracy, correlation, std) rather than single objective (MAE/RMSE).
+
+\subsection{Why NVDA is Most Predictable}
+
+NVDA consistently outperforms across models:
+\begin{itemize}
+\item LSTM: 52.73\% → 53.45\% (2026)
+\item Combined: 54.72\%
+\item Transformer: \textbf{62.26\%}
+\end{itemize}
+
+\textbf{Hypotheses:}
+\begin{itemize}
+\item Strong momentum trends (AI boom 2020-2026)
+\item High social media activity (better sentiment signal)
+\item Less noise in price movements
+\item Institutional investor behavior more predictable
+\end{itemize}
+
+\section{Discussion}
+
+\subsection{Deep Learning Architecture Decisions}
+
+\textbf{Why sequence models?} Stock prices exhibit temporal dependencies - today's price depends on recent history. Sequence models (LSTM, Transformer) naturally capture these patterns.
+
+\textbf{Why Transformer over LSTM?} Attention mechanism allows model to focus on relevant time steps rather than processing all steps equally. For NVDA, attention likely focuses on momentum indicators during AI boom.
+
+\textbf{Why 5-day sequences?} Tuned on validation data. Shorter sequences (3 days) miss longer-term patterns. Longer sequences (10+ days) introduce noise and increase overfitting.
+
+\textbf{Why 2 layers?} Balance between model capacity and overfitting risk. Single layer underfits; 3+ layers overfit with our dataset size.
+
+\subsection{Generalization Challenges}
+
+2026 validation reveals key challenges:
+\begin{itemize}
+\item \textbf{Market regime change:} Models trained on bull market struggle in mixed conditions
+\item \textbf{Ticker-specific behavior:} NVDA improves (+0.72\%), AAPL degrades (-7.17\%)
+\item \textbf{Sentiment drift:} Social media sentiment patterns may change over time
+\end{itemize}
+
+\textbf{Implication:} Models need periodic retraining as market conditions evolve.
+
+\subsection{Limitations}
+
+\begin{enumerate}
+\item \textbf{Limited scope:} Only 4 tech stocks; may not generalize to other sectors
+\item \textbf{Short horizon:} Next-day prediction; longer-term forecasting unexplored
+\item \textbf{No transaction costs:} Real trading has fees and slippage
+\item \textbf{Sentiment coverage:} NewsAPI limited to 39 days (5.2\%)
+\item \textbf{Class imbalance:} Not fully addressed in all experiments
+\end{enumerate}
+
+\section{Conclusion}
+
+We implemented and trained LSTM and Transformer architectures for stock price prediction with multi-source sentiment analysis. Key findings:
+
+\begin{enumerate}
+\item \textbf{Transformer outperforms LSTM} by +4.12\% (56.39\% vs 52.27\%), with NVDA achieving 62.26\% accuracy
+\item \textbf{Multi-source sentiment helps volatile stocks:} TSLA improves +6.08\% with combined StockTwits + NewsAPI
+\item \textbf{2026 validation} shows -3.56\% degradation, highlighting generalization challenges
+\item \textbf{Multi-class LSTM} suffers severe overfitting (92\% → 33\%), demonstrating data requirements
+\item \textbf{Prediction collapse} in technical-only models emphasizes need for multi-metric evaluation
+\end{enumerate}
+
+\textbf{Deep Learning Insights:}
+\begin{itemize}
+\item Attention mechanism (Transformer) better captures temporal patterns than recurrent gates (LSTM)
+\item Overfitting is major challenge with limited financial data
+\item Multi-metric evaluation essential to detect prediction collapse
+\item Ticker-specific models outperform single model for all stocks
+\end{itemize}
+
+\textbf{Future Work:}
+\begin{itemize}
+\item Investigate why NVDA is more predictable
+\item Explore ticker-specific sentiment weighting
+\item Add more sentiment sources (Reddit, Twitter)
+\item Try intraday predictions with higher-frequency data
+\item Address class imbalance with focal loss
+\item Explore multi-task learning (direction + magnitude)
+\end{itemize}
+
+Our results demonstrate that deep learning shows promise for stock prediction, but success requires careful attention to architecture selection, regularization, and multi-metric evaluation to avoid overfitting and prediction collapse.
+
+\section*{Acknowledgments}
+
+We thank the CS 7643 teaching staff for guidance throughout this project. StockTwits data collected via public API. NewsAPI data from NewsAPI.org. RoBERTa sentiment model from HuggingFace.
+
+\section*{Code Repository}
+
+All code, trained models, and data available at:\\
+\url{https://github.com/KKONAM/financial-sentiment-analysis-spring-2026/tree/transformer-model-2026}
+
+\newpage
+
+\section*{References}
+
+\begin{enumerate}
+\item Hochreiter, S., \& Schmidhuber, J. (1997). Long short-term memory. Neural computation, 9(8), 1735-1780.
+\item Vaswani, A., et al. (2017). Attention is all you need. Advances in neural information processing systems, 30.
+\item Devlin, J., et al. (2018). BERT: Pre-training of deep bidirectional transformers for language understanding. arXiv preprint arXiv:1810.04805.
+\item Bollen, J., Mao, H., \& Zeng, X. (2011). Twitter mood predicts the stock market. Journal of computational science, 2(1), 1-8.
+\item Kingma, D. P., \& Ba, J. (2014). Adam: A method for stochastic optimization. arXiv preprint arXiv:1412.6980.
+\item Srivastava, N., et al. (2014). Dropout: a simple way to prevent neural networks from overfitting. The journal of machine learning research, 15(1), 1929-1958.
+\end{enumerate}
+
+\newpage
+
+\section*{Team Contributions}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{3cm}p{10cm}}
+\toprule
+\textbf{Team Member} & \textbf{Contributions} \\
+\midrule
+Agha A Raza & 
+\begin{itemize}
+\item Implemented Transformer architecture from scratch
+\item Designed and conducted feature ablation experiments
+\item Analyzed overfitting and prediction collapse issues
+\item Wrote methodology and analysis sections
+\item Created training visualizations
+\end{itemize} \\
+\midrule
+Konam G Kenneth & 
+\begin{itemize}
+\item Implemented LSTM baseline architecture
+\item Collected and processed StockTwits and NewsAPI data
+\item Designed combined sentiment weighting strategy
+\item Conducted 2026 out-of-sample validation
+\item Wrote data collection and results sections
+\end{itemize} \\
+\midrule
+\textbf{Shared} & 
+\begin{itemize}
+\item Hyperparameter tuning and model training
+\item Multi-class LSTM experiment and analysis
+\item Paper writing and editing
+\item Code repository organization
+\item Figure generation and visualization
+\end{itemize} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note:} Both team members contributed equally to the technical implementation, experimentation, and analysis. All team members participated in all aspects of the project.
+
+\end{document}
