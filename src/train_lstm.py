@@ -19,31 +19,34 @@ from features.build_features import (
 from temporal.lstm import HybridLSTM
 
 
-SEQUENCE_LENGTH = 20
+SEQUENCE_LENGTH = 30
 TARGET_HORIZON_DAYS = 5
 TARGET_COLUMN = "future_return_5d"
-INCLUDE_CURRENT_ROW = False
+INCLUDE_CURRENT_ROW = True
 DIRECTION_FLAT_THRESHOLD = 0.005
-TRAIN_END_DATE = "2021-12-31"
-VAL_END_DATE = "2022-06-30"
+TRAIN_END_DATE = "2021-04-30"
+VAL_END_DATE = "2021-08-31"
 EPOCHS = 60
 BATCH_SIZE = 32
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 0.0
-HIDDEN_SIZE = 16
+HIDDEN_SIZE = 96
 NUM_LAYERS = 3
-CLASSIFIER_HIDDEN = 32
-BIDIRECTIONAL = True
-LSTM_DROPOUT = 0.0
-FC_DROPOUT = 0.2
-SMOOTH_L1_BETA = 0.1
+CLASSIFIER_HIDDEN = 16
+BIDIRECTIONAL = False
+LSTM_DROPOUT = 0.2
+FC_DROPOUT = 0.0
+LOSS_NAME = "mae"
+OPTIMIZER_NAME = "adam"
+SMOOTH_L1_BETA = 0.05
+SCALE_TARGET = True
 EARLY_STOPPING_PATIENCE = 8
 EARLY_STOPPING_MIN_DELTA = 1e-5
-SEED = 7
-CHECKPOINT_PATH = Path(f"model_checkpoints/lstm_{TARGET_HORIZON_DAYS}d_return_best.pt")
-PREDICTIONS_PATH = Path(f"reports/lstm_{TARGET_HORIZON_DAYS}d_return_predictions.csv")
+SEED = 42
+CHECKPOINT_PATH = Path(f"model_checkpoints/final/lstm_{TARGET_HORIZON_DAYS}d_return_best.pt")
+PREDICTIONS_PATH = Path(f"reports/final/lstm_{TARGET_HORIZON_DAYS}d_return_predictions.csv")
 PROGRESS_EVERY_BATCHES = 10
-CACHE_VERSION = "v2_trading_days"
+CACHE_VERSION = "v4_purged_rawtech_labeled_sentiment"
 
 
 def main():
@@ -51,7 +54,7 @@ def main():
     set_seed(SEED)
     symbols = ["AAPL", "AMZN", "META", "NVDA", "TSLA"]
     start_date = "2020-01-01"
-    end_date = "2022-12-31"
+    end_date = "2022-02-28"
     combined_features_path = build_combined_features_path(symbols, start_date, end_date, TARGET_HORIZON_DAYS)
 
     log_step("Loading or building combined indicator + sentiment dataframe")
@@ -108,16 +111,21 @@ def main():
         train_cutoff=train_cutoff,
         val_cutoff=val_cutoff,
     )
+    target_mean, target_scale = fit_target_scaler(y=y, train_idx=train_idx)
+    model_y = scale_targets(y=y, target_mean=target_mean, target_scale=target_scale)
 
     log_step(
         "Split sizes: "
         f"train={len(train_idx):,}, validation={len(val_idx):,}, test={len(test_idx):,}"
     )
+    if SCALE_TARGET:
+        log_step(f"Scaling target using train mean={target_mean:.6f}, std={target_scale:.6f}")
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     log_step(f"Using device: {device}")
-    x_train, y_train = to_tensors(X, y, train_idx, device)
-    x_val, y_val = to_tensors(X, y, val_idx, device)
-    x_test, y_test = to_tensors(X, y, test_idx, device)
+    x_train, y_train = to_tensors(X, model_y, train_idx, device)
+    x_val, y_val = to_tensors(X, model_y, val_idx, device)
+    x_test, y_test = to_tensors(X, model_y, test_idx, device)
 
     test_meta = meta.iloc[test_idx].reset_index(drop=True)
 
@@ -138,8 +146,8 @@ def main():
         lstm_dropout=LSTM_DROPOUT,
         fc_dropout=FC_DROPOUT,
     ).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
-    loss_fn = nn.SmoothL1Loss(beta=SMOOTH_L1_BETA)
+    optimizer = build_optimizer(model)
+    loss_fn = build_loss()
 
     best_val_loss = float("inf")
     epochs_without_improvement = 0
@@ -174,7 +182,12 @@ def main():
                 bidirectional=BIDIRECTIONAL,
                 lstm_dropout=LSTM_DROPOUT,
                 fc_dropout=FC_DROPOUT,
+                loss_name=LOSS_NAME,
+                optimizer_name=OPTIMIZER_NAME,
                 smooth_l1_beta=SMOOTH_L1_BETA,
+                scale_target=SCALE_TARGET,
+                target_mean=target_mean,
+                target_scale=target_scale,
                 include_current_row=INCLUDE_CURRENT_ROW,
                 seed=SEED,
             )
@@ -205,7 +218,13 @@ def main():
     model.load_state_dict(checkpoint["model_state_dict"])
 
     log_step("Running final test evaluation")
-    test_loss, test_predictions, test_targets = evaluate(model, test_loader, loss_fn)
+    test_loss, scaled_test_predictions, _ = evaluate(model, test_loader, loss_fn)
+    test_predictions = inverse_scale_targets(
+        y=scaled_test_predictions,
+        target_mean=target_mean,
+        target_scale=target_scale,
+    )
+    test_targets = y[test_idx]
     test_mae = mean_absolute_error(test_targets, test_predictions)
     test_rmse = float(np.sqrt(mean_squared_error(test_targets, test_predictions)))
     test_directional_accuracy = directional_accuracy(test_targets, test_predictions)
@@ -311,6 +330,25 @@ def to_tensors(
     return features, targets
 
 
+def fit_target_scaler(y: np.ndarray, train_idx: np.ndarray) -> tuple[float, float]:
+    if not SCALE_TARGET:
+        return 0.0, 1.0
+
+    target_mean = float(np.mean(y[train_idx]))
+    target_scale = float(np.std(y[train_idx]))
+    if np.isclose(target_scale, 0.0):
+        target_scale = 1.0
+    return target_mean, target_scale
+
+
+def scale_targets(y: np.ndarray, target_mean: float, target_scale: float) -> np.ndarray:
+    return ((y - target_mean) / target_scale).astype(np.float32)
+
+
+def inverse_scale_targets(y: np.ndarray, target_mean: float, target_scale: float) -> np.ndarray:
+    return y * target_scale + target_mean
+
+
 def train_one_epoch(
     model: HybridLSTM,
     loader: DataLoader,
@@ -341,6 +379,24 @@ def train_one_epoch(
             )
 
     return total_loss / total_rows
+
+
+def build_optimizer(model: nn.Module) -> torch.optim.Optimizer:
+    if OPTIMIZER_NAME == "adam":
+        return torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+    if OPTIMIZER_NAME == "adamw":
+        return torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+    raise ValueError(f"Unsupported optimizer: {OPTIMIZER_NAME}")
+
+
+def build_loss() -> nn.Module:
+    if LOSS_NAME == "smooth_l1":
+        return nn.SmoothL1Loss(beta=SMOOTH_L1_BETA)
+    if LOSS_NAME == "mse":
+        return nn.MSELoss()
+    if LOSS_NAME == "mae":
+        return nn.L1Loss()
+    raise ValueError(f"Unsupported loss: {LOSS_NAME}")
 
 
 def evaluate(
@@ -464,7 +520,12 @@ def save_checkpoint(
     bidirectional: bool,
     lstm_dropout: float,
     fc_dropout: float,
+    loss_name: str,
+    optimizer_name: str,
     smooth_l1_beta: float,
+    scale_target: bool,
+    target_mean: float,
+    target_scale: float,
     include_current_row: bool,
     seed: int,
 ) -> None:
@@ -489,8 +550,12 @@ def save_checkpoint(
             "include_current_row": include_current_row,
             "learning_rate": LEARNING_RATE,
             "weight_decay": WEIGHT_DECAY,
-            "loss_name": "smooth_l1",
+            "loss_name": loss_name,
             "smooth_l1_beta": smooth_l1_beta,
+            "optimizer_name": optimizer_name,
+            "scale_target": scale_target,
+            "target_mean": target_mean,
+            "target_scale": target_scale,
             "early_stopping_patience": EARLY_STOPPING_PATIENCE,
             "seed": seed,
             "scaler_mean": scaler.mean_.tolist(),

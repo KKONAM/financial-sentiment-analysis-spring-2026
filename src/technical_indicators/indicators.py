@@ -4,9 +4,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
-
-
 MARKET_FEATURES = ["returns", "rsi", "macd", "bbp", "momentum", "volume"]
 
 
@@ -14,7 +11,7 @@ def build_market_indicators(
     symbols,
     start_date: str,
     end_date: str,
-    train_end: str = "2021-12-31",
+    train_end: str = "2021-04-30",
     forecast_horizon: int = 1,
 ) -> pd.DataFrame:
     symbols = list(symbols)
@@ -35,7 +32,7 @@ def build_market_indicators(
     full_frame["Date"] = pd.to_datetime(full_frame["Date"])
     full_frame = full_frame.dropna(subset=MARKET_FEATURES + ["future_return", "label", "future_return_5d"])
 
-    return _scale_market_features_by_ticker(full_frame, train_end=train_end)
+    return full_frame.sort_values(["ticker", "Date"]).reset_index(drop=True)
 
 
 def build_price_feature_frame(price_frame: pd.DataFrame, forecast_horizon: int = 1) -> pd.DataFrame:
@@ -208,20 +205,3 @@ def _build_symbol_indicator_frame(
     frame["target_direction"] = frame["label"]
     return frame
 
-
-def _scale_market_features_by_ticker(frame: pd.DataFrame, train_end: str) -> pd.DataFrame:
-    train_end_ts = pd.to_datetime(train_end)
-    scaled_frames = []
-
-    for ticker, ticker_frame in frame.groupby("ticker"):
-        ticker_frame = ticker_frame.copy()
-        train_mask = ticker_frame["Date"] <= train_end_ts
-        if not train_mask.any():
-            raise ValueError(f"No training rows found for {ticker} on or before train_end={train_end_ts.date()}.")
-
-        scaler = StandardScaler()
-        scaler.fit(ticker_frame.loc[train_mask, MARKET_FEATURES])
-        ticker_frame[MARKET_FEATURES] = scaler.transform(ticker_frame[MARKET_FEATURES])
-        scaled_frames.append(ticker_frame)
-
-    return pd.concat(scaled_frames, ignore_index=True)

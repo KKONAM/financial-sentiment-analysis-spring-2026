@@ -15,24 +15,32 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from tune_lstm import (
     DATA_PATH,
+    DEFAULT_TRIALS,
+    DEFAULT_TRAINING_SEED,
     DIRECTION_FLAT_THRESHOLD,
     FEATURE_COLUMNS,
+    FINAL_CHECKPOINT_DIR,
+    FINAL_REPORT_DIR,
+    FIXED_BIDIRECTIONAL,
+    FIXED_INCLUDE_CURRENT_ROW,
+    EXPERIMENT_SLUG,
     TARGET_COLUMN,
     TRAIN_END_DATE,
     VAL_END_DATE,
     build_loss,
     build_optimizer,
     evaluate_split,
+    load_frame,
     prepare_data,
     scale_features,
     set_seed,
 )
 
 
-SEARCH_RESULTS_PATH = Path("reports/gru_hyperparameter_search.csv")
-BEST_CONFIG_PATH = Path("reports/gru_best_hyperparameters.json")
-TUNED_PREDICTIONS_PATH = Path("reports/gru_tuned_5d_return_predictions.csv")
-TUNED_CHECKPOINT_PATH = Path("model_checkpoints/gru_tuned_5d_return_best.pt")
+SEARCH_RESULTS_PATH = FINAL_REPORT_DIR / f"gru_combined_tuned_{EXPERIMENT_SLUG}_search.csv"
+BEST_CONFIG_PATH = FINAL_REPORT_DIR / f"gru_combined_tuned_{EXPERIMENT_SLUG}_best.json"
+TUNED_PREDICTIONS_PATH = FINAL_REPORT_DIR / f"gru_combined_tuned_{EXPERIMENT_SLUG}_predictions.csv"
+TUNED_CHECKPOINT_PATH = FINAL_CHECKPOINT_DIR / f"gru_combined_tuned_{EXPERIMENT_SLUG}_best.pt"
 
 
 @dataclass(frozen=True)
@@ -114,12 +122,17 @@ def main() -> None:
     device = torch.device("cuda" if torch.cuda.is_available() and not args.cpu else "cpu")
 
     started_at = perf_counter()
-    frame = pd.read_csv(args.data_path, parse_dates=["Date"])
+    frame = load_frame(args.data_path)
     train_cutoff = pd.to_datetime(TRAIN_END_DATE).normalize()
     val_cutoff = pd.to_datetime(VAL_END_DATE).normalize()
     scaled_frame, feature_scaler = scale_features(frame, train_cutoff)
     search_options = build_search_options()
-    trial_configs = sample_configs(search_options, trials=args.trials, seed=args.search_seed)
+    trial_configs = sample_configs(
+        search_options,
+        trials=args.trials,
+        seed=args.search_seed,
+        training_seed=args.training_seed,
+    )
 
     print(
         f"[tune_gru] device={device} trials={len(trial_configs)} "
@@ -234,11 +247,12 @@ def main() -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Random-search GRU hyperparameters on the validation split.")
     parser.add_argument("--data-path", type=Path, default=DATA_PATH)
-    parser.add_argument("--trials", type=int, default=96)
+    parser.add_argument("--trials", type=int, default=DEFAULT_TRIALS)
     parser.add_argument("--max-epochs", type=int, default=80)
     parser.add_argument("--patience", type=int, default=10)
     parser.add_argument("--min-delta", type=float, default=1e-5)
     parser.add_argument("--search-seed", type=int, default=2026)
+    parser.add_argument("--training-seed", type=int, default=DEFAULT_TRAINING_SEED)
     parser.add_argument("--torch-threads", type=int, default=4)
     parser.add_argument("--cpu", action="store_true")
     parser.add_argument("--search-results-path", type=Path, default=SEARCH_RESULTS_PATH)
@@ -250,56 +264,56 @@ def parse_args() -> argparse.Namespace:
 
 def build_search_options() -> dict[str, list[object]]:
     return {
-        "sequence_length": [5, 10, 15, 20, 30, 45, 60],
-        "include_current_row": [True, False],
-        "hidden_size": [16, 24, 32, 48, 64, 96, 128],
-        "num_layers": [1, 2, 3, 4],
-        "classifier_hidden": [8, 16, 24, 32, 48, 64],
-        "head_layers": [1, 2, 3],
-        "bidirectional": [False, True],
-        "gru_dropout": [0.0, 0.05, 0.1, 0.2, 0.3],
-        "fc_dropout": [0.0, 0.05, 0.1, 0.2, 0.3],
-        "activation_name": ["relu", "gelu", "silu", "tanh"],
-        "pooling_name": ["last", "mean", "max", "last_mean"],
+        "sequence_length": [10, 20, 30, 45],
+        "hidden_size": [24, 32, 48, 64, 96],
+        "num_layers": [1, 2, 3],
+        "classifier_hidden": [8, 16, 32],
+        "head_layers": [1, 2],
+        "gru_dropout": [0.0, 0.1, 0.2],
+        "fc_dropout": [0.0, 0.1, 0.2, 0.3],
+        "activation_name": ["relu", "gelu", "tanh"],
+        "pooling_name": ["last", "mean", "last_mean"],
         "use_layer_norm": [False, True],
-        "gru_bias": [True, False],
-        "learning_rate": [5e-5, 1e-4, 3e-4, 1e-3, 3e-3],
-        "weight_decay": [0.0, 1e-6, 1e-5, 1e-4, 1e-3],
-        "batch_size": [8, 16, 32, 64, 128],
+        "learning_rate": [1e-4, 3e-4, 1e-3],
+        "weight_decay": [0.0, 1e-6, 1e-5, 1e-4],
+        "batch_size": [16, 32, 64],
         "loss_name": ["smooth_l1", "mse", "mae"],
-        "smooth_l1_beta": [0.01, 0.02, 0.05, 0.1, 0.2],
+        "smooth_l1_beta": [0.05, 0.1, 0.2],
         "optimizer_name": ["adam", "adamw"],
-        "gradient_clip": [None, 0.25, 0.5, 1.0, 2.0],
-        "scale_target": [False, True],
-        "seed": [7, 21, 42, 101],
+        "gradient_clip": [None, 0.25, 0.5, 1.0],
+        "scale_target": [True],
     }
 
 
-def sample_configs(options: dict[str, list[object]], trials: int, seed: int) -> list[TrialConfig]:
+def sample_configs(
+    options: dict[str, list[object]],
+    trials: int,
+    seed: int,
+    training_seed: int = DEFAULT_TRAINING_SEED,
+) -> list[TrialConfig]:
     rng = random.Random(seed)
-    sampled = curated_configs()
+    sampled = curated_configs(training_seed=training_seed)
     seen = set(sampled)
     while len(sampled) < trials:
         loss_name = rng.choice(options["loss_name"])
         num_layers = rng.choice(options["num_layers"])
         hidden_size = rng.choice(options["hidden_size"])
-        bidirectional = rng.choice(options["bidirectional"])
         head_layers = rng.choice(options["head_layers"])
         pooling_name = rng.choice(options["pooling_name"])
         config = TrialConfig(
             sequence_length=rng.choice(options["sequence_length"]),
-            include_current_row=rng.choice(options["include_current_row"]),
+            include_current_row=FIXED_INCLUDE_CURRENT_ROW,
             hidden_size=hidden_size,
             num_layers=num_layers,
             classifier_hidden=rng.choice(options["classifier_hidden"]),
             head_layers=head_layers,
-            bidirectional=bidirectional,
+            bidirectional=FIXED_BIDIRECTIONAL,
             gru_dropout=0.0 if num_layers == 1 else rng.choice(options["gru_dropout"]),
             fc_dropout=rng.choice(options["fc_dropout"]),
             activation_name=rng.choice(options["activation_name"]),
             pooling_name=pooling_name,
             use_layer_norm=rng.choice(options["use_layer_norm"]),
-            gru_bias=rng.choice(options["gru_bias"]),
+            gru_bias=True,
             learning_rate=rng.choice(options["learning_rate"]),
             weight_decay=rng.choice(options["weight_decay"]),
             batch_size=rng.choice(options["batch_size"]),
@@ -308,7 +322,7 @@ def sample_configs(options: dict[str, list[object]], trials: int, seed: int) -> 
             optimizer_name=rng.choice(options["optimizer_name"]),
             gradient_clip=rng.choice(options["gradient_clip"]),
             scale_target=rng.choice(options["scale_target"]),
-            seed=rng.choice(options["seed"]),
+            seed=training_seed,
         )
         if too_large(config):
             continue
@@ -319,63 +333,39 @@ def sample_configs(options: dict[str, list[object]], trials: int, seed: int) -> 
     return sampled[:trials]
 
 
-def curated_configs() -> list[TrialConfig]:
-    best_balanced = TrialConfig(
-        sequence_length=10,
-        include_current_row=False,
-        hidden_size=128,
-        num_layers=4,
-        classifier_hidden=16,
-        head_layers=2,
-        bidirectional=False,
-        gru_dropout=0.1,
-        fc_dropout=0.2,
-        activation_name="tanh",
-        pooling_name="max",
-        use_layer_norm=True,
-        gru_bias=False,
-        learning_rate=1e-3,
-        weight_decay=1e-6,
-        batch_size=32,
-        loss_name="mae",
-        smooth_l1_beta=0.05,
-        optimizer_name="adamw",
-        gradient_clip=1.0,
-        scale_target=False,
-        seed=42,
-    )
+def curated_configs(training_seed: int = DEFAULT_TRAINING_SEED) -> list[TrialConfig]:
     baseline = TrialConfig(
-        sequence_length=15,
-        include_current_row=True,
-        hidden_size=16,
-        num_layers=3,
+        sequence_length=20,
+        include_current_row=FIXED_INCLUDE_CURRENT_ROW,
+        hidden_size=32,
+        num_layers=2,
         classifier_hidden=16,
         head_layers=1,
-        bidirectional=False,
-        gru_dropout=0.0,
+        bidirectional=FIXED_BIDIRECTIONAL,
+        gru_dropout=0.1,
         fc_dropout=0.0,
         activation_name="relu",
         pooling_name="last",
         use_layer_norm=False,
         gru_bias=True,
-        learning_rate=1e-4,
-        weight_decay=1e-4,
-        batch_size=16,
+        learning_rate=3e-4,
+        weight_decay=1e-5,
+        batch_size=32,
         loss_name="smooth_l1",
-        smooth_l1_beta=0.05,
+        smooth_l1_beta=0.1,
         optimizer_name="adam",
-        gradient_clip=None,
-        scale_target=False,
-        seed=42,
+        gradient_clip=0.5,
+        scale_target=True,
+        seed=training_seed,
     )
     compact_fast = TrialConfig(
         sequence_length=10,
-        include_current_row=True,
+        include_current_row=FIXED_INCLUDE_CURRENT_ROW,
         hidden_size=32,
         num_layers=1,
         classifier_hidden=16,
         head_layers=1,
-        bidirectional=False,
+        bidirectional=FIXED_BIDIRECTIONAL,
         gru_dropout=0.0,
         fc_dropout=0.1,
         activation_name="gelu",
@@ -386,48 +376,48 @@ def curated_configs() -> list[TrialConfig]:
         weight_decay=1e-5,
         batch_size=32,
         loss_name="smooth_l1",
-        smooth_l1_beta=0.05,
+        smooth_l1_beta=0.1,
         optimizer_name="adamw",
         gradient_clip=1.0,
-        scale_target=False,
-        seed=42,
+        scale_target=True,
+        seed=training_seed,
     )
     wider_context = TrialConfig(
         sequence_length=30,
-        include_current_row=True,
+        include_current_row=FIXED_INCLUDE_CURRENT_ROW,
         hidden_size=64,
         num_layers=2,
         classifier_hidden=32,
         head_layers=2,
-        bidirectional=False,
+        bidirectional=FIXED_BIDIRECTIONAL,
         gru_dropout=0.1,
         fc_dropout=0.1,
-        activation_name="silu",
-        pooling_name="last_mean",
+        activation_name="tanh",
+        pooling_name="mean",
         use_layer_norm=True,
         gru_bias=True,
         learning_rate=3e-4,
         weight_decay=1e-5,
         batch_size=32,
         loss_name="smooth_l1",
-        smooth_l1_beta=0.05,
+        smooth_l1_beta=0.1,
         optimizer_name="adamw",
         gradient_clip=1.0,
-        scale_target=False,
-        seed=42,
+        scale_target=True,
+        seed=training_seed,
     )
-    bidirectional_scaled = TrialConfig(
-        sequence_length=20,
-        include_current_row=False,
-        hidden_size=48,
+    long_context = TrialConfig(
+        sequence_length=45,
+        include_current_row=FIXED_INCLUDE_CURRENT_ROW,
+        hidden_size=64,
         num_layers=2,
         classifier_hidden=32,
         head_layers=2,
-        bidirectional=True,
+        bidirectional=FIXED_BIDIRECTIONAL,
         gru_dropout=0.1,
         fc_dropout=0.2,
-        activation_name="gelu",
-        pooling_name="mean",
+        activation_name="relu",
+        pooling_name="last_mean",
         use_layer_norm=True,
         gru_bias=True,
         learning_rate=3e-4,
@@ -438,33 +428,33 @@ def curated_configs() -> list[TrialConfig]:
         optimizer_name="adamw",
         gradient_clip=1.0,
         scale_target=True,
-        seed=42,
+        seed=training_seed,
     )
-    lstm_best_like = TrialConfig(
+    compact_mean = TrialConfig(
         sequence_length=20,
-        include_current_row=False,
-        hidden_size=16,
-        num_layers=3,
-        classifier_hidden=32,
+        include_current_row=FIXED_INCLUDE_CURRENT_ROW,
+        hidden_size=24,
+        num_layers=1,
+        classifier_hidden=8,
         head_layers=1,
-        bidirectional=True,
+        bidirectional=FIXED_BIDIRECTIONAL,
         gru_dropout=0.0,
-        fc_dropout=0.2,
-        activation_name="relu",
-        pooling_name="last",
-        use_layer_norm=False,
+        fc_dropout=0.1,
+        activation_name="tanh",
+        pooling_name="mean",
+        use_layer_norm=True,
         gru_bias=True,
-        learning_rate=1e-4,
+        learning_rate=1e-3,
         weight_decay=0.0,
         batch_size=32,
-        loss_name="smooth_l1",
+        loss_name="mae",
         smooth_l1_beta=0.1,
-        optimizer_name="adam",
-        gradient_clip=None,
-        scale_target=False,
-        seed=7,
+        optimizer_name="adamw",
+        gradient_clip=0.25,
+        scale_target=True,
+        seed=training_seed,
     )
-    return [best_balanced, baseline, compact_fast, wider_context, bidirectional_scaled, lstm_best_like]
+    return [baseline, compact_fast, wider_context, long_context, compact_mean]
 
 
 def run_trial(
@@ -647,12 +637,14 @@ def selection_score(metrics: dict[str, float]) -> float:
     corr = metrics["correlation"]
     corr_reward = 0.0 if np.isnan(corr) else 0.004 * max(0.0, corr)
     corr_penalty = 0.0 if np.isnan(corr) else 0.002 * max(0.0, -corr)
-    directional_reward = 0.02 * metrics["directional_accuracy"]
+    directional_reward = 0.02 * max(0.0, metrics["directional_lift"])
+    directional_penalty = 0.01 * max(0.0, -metrics["directional_lift"])
     collapse_penalty = max(0.0, 0.01 - metrics["prediction_std"]) * 3.0
     return (
         metrics["rmse"]
         + 0.25 * metrics["mae"]
         + corr_penalty
+        + directional_penalty
         + collapse_penalty
         - corr_reward
         - directional_reward

@@ -11,6 +11,7 @@ SENTIMENT_FEATURES = [
     "sentiment_score",
     "sentiment_confidence",
     "article_count",
+    "message_count",
 ]
 
 
@@ -49,6 +50,7 @@ def fill_missing_sentiment(frame: pd.DataFrame) -> pd.DataFrame:
         "sentiment_score": 0.0,
         "sentiment_confidence": 1.0,
         "article_count": 0,
+        "message_count": 0,
     }
 
     for column, value in fill_values.items():

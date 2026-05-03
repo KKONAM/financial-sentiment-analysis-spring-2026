@@ -215,7 +215,7 @@ def combine_indicators_and_sentiment(
     end_date: str,
     news_df: pd.DataFrame | None = None,
     news_csv_path: str | Path | None = None,
-    train_end: str = "2021-12-31",
+    train_end: str = "2021-04-30",
     forecast_horizon: int = 1,
     text_column: str = "title",
     news_date_column: str = "date",
@@ -445,25 +445,50 @@ def _to_normalized_datetime(values: pd.Series) -> pd.Series:
 def _add_stocktwits_label_scores(frame: pd.DataFrame) -> pd.DataFrame:
     scored = frame.copy()
     entities = scored["entities"].fillna("").astype(str)
+    bullish = entities.str.contains(BULLISH_LABEL_PATTERN, regex=True)
+    bearish = entities.str.contains(BEARISH_LABEL_PATTERN, regex=True)
 
-    scored["positive_score"] = entities.str.contains(BULLISH_LABEL_PATTERN, regex=True).astype(float)
-    scored["negative_score"] = entities.str.contains(BEARISH_LABEL_PATTERN, regex=True).astype(float)
-    scored["neutral_score"] = (
-        (scored["positive_score"] == 0.0) & (scored["negative_score"] == 0.0)
-    ).astype(float)
+    scored["is_labeled"] = bullish | bearish
+    scored["positive_score"] = bullish.astype(float)
+    scored["negative_score"] = bearish.astype(float)
+    scored["neutral_score"] = 0.0
     scored["sentiment_score"] = scored["positive_score"] - scored["negative_score"]
     return scored
 
 
 def _aggregate_stocktwits_daily_scores(frame: pd.DataFrame) -> pd.DataFrame:
-    daily_scores = frame.groupby(["ticker", "Date"]).agg(
-        positive_score=("positive_score", "mean"),
-        negative_score=("negative_score", "mean"),
-        neutral_score=("neutral_score", "mean"),
-        sentiment_score=("sentiment_score", "mean"),
-        article_count=("sentiment_score", "count"),
+    group_columns = ["ticker", "Date"]
+    message_counts = (
+        frame.groupby(group_columns)
+        .size()
+        .rename("message_count")
+        .reset_index()
     )
-    return daily_scores.reset_index()
+    labeled = frame[frame["is_labeled"]]
+
+    if labeled.empty:
+        daily = message_counts
+        daily["positive_score"] = np.nan
+        daily["negative_score"] = np.nan
+        daily["neutral_score"] = np.nan
+        daily["sentiment_score"] = np.nan
+        daily["article_count"] = 0
+        return daily
+
+    daily_scores = (
+        labeled.groupby(group_columns)
+        .agg(
+            positive_score=("positive_score", "mean"),
+            negative_score=("negative_score", "mean"),
+            neutral_score=("neutral_score", "mean"),
+            sentiment_score=("sentiment_score", "mean"),
+            article_count=("sentiment_score", "count"),
+        )
+        .reset_index()
+    )
+    daily = message_counts.merge(daily_scores, on=group_columns, how="left")
+    daily["article_count"] = daily["article_count"].fillna(0).astype(int)
+    return daily
 
 
 def _max_sentiment_confidence(frame: pd.DataFrame) -> pd.Series:

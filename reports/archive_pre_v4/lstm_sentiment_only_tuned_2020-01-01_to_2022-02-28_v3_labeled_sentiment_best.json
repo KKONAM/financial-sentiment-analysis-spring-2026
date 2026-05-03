@@ -1,0 +1,57 @@
+{
+  "model": "lstm",
+  "feature_group": "sentiment_only",
+  "feature_columns": [
+    "positive_score",
+    "negative_score",
+    "neutral_score",
+    "sentiment_score",
+    "sentiment_confidence",
+    "article_count",
+    "message_count"
+  ],
+  "best_validation": {
+    "sequence_length": 30,
+    "include_current_row": false,
+    "hidden_size": 64,
+    "num_layers": 1,
+    "classifier_hidden": 32,
+    "bidirectional": true,
+    "lstm_dropout": 0.0,
+    "fc_dropout": 0.1,
+    "learning_rate": 0.003,
+    "weight_decay": 0.0,
+    "batch_size": 64,
+    "loss_name": "mae",
+    "smooth_l1_beta": 0.05,
+    "optimizer_name": "adamw",
+    "gradient_clip": 1.0,
+    "scale_target": true,
+    "seed": 21,
+    "val_mae": 0.02995084412395954,
+    "val_rmse": 0.03952300456200721,
+    "val_directional_accuracy": 0.5741176470588235,
+    "val_correlation": 0.3029346220253419,
+    "val_prediction_mean": 0.012811483815312386,
+    "val_prediction_std": 0.012154943309724331,
+    "selection_score": 0.0470107155929971,
+    "epochs_ran": 16,
+    "trial": 37,
+    "seconds": 3.19
+  },
+  "test_metrics": {
+    "mae": 0.04933983460068703,
+    "rmse": 0.06640920562337499,
+    "directional_accuracy": 0.3764705882352941,
+    "correlation": 0.07476637590436125,
+    "prediction_mean": 0.013210348784923553,
+    "prediction_std": 0.0151436235755682
+  },
+  "paths": {
+    "search_results": "reports\\lstm_sentiment_only_tuned_2020-01-01_to_2022-02-28_v3_labeled_sentiment_search.csv",
+    "best_config": "reports\\lstm_sentiment_only_tuned_2020-01-01_to_2022-02-28_v3_labeled_sentiment_best.json",
+    "predictions": "reports\\lstm_sentiment_only_tuned_2020-01-01_to_2022-02-28_v3_labeled_sentiment_predictions.csv",
+    "checkpoint": "model_checkpoints\\lstm_sentiment_only_tuned_2020-01-01_to_2022-02-28_v3_labeled_sentiment_best.pt"
+  },
+  "runtime_seconds": 295.461
+}

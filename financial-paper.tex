@@ -16,9 +16,9 @@ Five-Day Stock Return Prediction} \\[0.5em]
 \large CS 7643}
 
 \author{
-Your Name \\
+Agha A Raza, Konam G Kenneth \\
 Georgia Institute of Technology \\
-\texttt{your.email@gatech.edu}
+\texttt{ragha3@gatech.edu, kkonam3@gatech.edu}
 }
 
 \date{}
@@ -29,7 +29,7 @@ Georgia Institute of Technology \\
 
 \begin{abstract}
 \small
-Financial return prediction is difficult because short-horizon stock movements are noisy, nonstationary, and sensitive to both market dynamics and new information. This project studies whether daily sentiment features, combined with technical indicators, can support sequence models for forecasting future stock returns. We construct a panel dataset for AAPL, AMZN, META, NVDA, and TSLA from 2020 through 2022, using daily market indicators and aggregated sentiment scores. The target is the future five-trading-day return. We evaluate recurrent neural models, focusing on tuned LSTM and GRU architectures, and compare them with simple return and direction baselines. The tuned LSTM achieves the lowest test error with MAE 0.0574 and RMSE 0.0752, while the tuned GRU obtains MAE 0.0597, RMSE 0.0782, and directional accuracy 0.5180. Although the recurrent models learn weak positive correlation with future returns, results show that this task remains challenging: the zero-return baseline is competitive on RMSE, and the GRU directional score matches an always-down baseline in the bearish 2022 test period. These findings suggest that sentiment-enhanced recurrent models capture some signal but require stronger objectives or additional features to produce robust trading-direction forecasts.
+Financial return prediction is difficult because short-horizon stock movements are noisy, nonstationary, and sensitive to both market dynamics and new information. This project studies whether daily sentiment features, combined with technical indicators, can support sequence models for forecasting future stock returns and three-way return direction. We construct a panel dataset for AAPL, AMZN, META, NVDA, and TSLA using daily market indicators and StockTwits-derived sentiment features. Because the available StockTwits messages end in late February or early March 2022, we restrict the final experiment to the period with sentiment coverage. The target is the future five-trading-day return, evaluated under a purged chronological split so target windows do not cross train-validation or validation-test boundaries. We first evaluate tuned LSTM and GRU models trained only to predict continuous five-day returns. We then extend them into multitask models that share the same LSTM or GRU sequence layer. These multitask models use two output heads: one for return regression and one for three-class direction prediction. In the return-only setting, sentiment-only LSTM obtains the lowest recurrent-model test error (MAE 0.0488, RMSE 0.0662) and strongest positive test correlation (0.0461). In the multitask setting, sentiment-only GRU obtains the highest direction-head accuracy (0.4218), sentiment-only LSTM obtains the strongest positive test correlation (0.0365), and combined-feature LSTM obtains the best macro F1 (0.2883). The multitask direction heads improve over thresholding return-only outputs, but the always-down baseline remains stronger on raw accuracy because the held-out period is negatively skewed. These findings suggest that sentiment features contain measurable but weak signal, while financial direction prediction remains highly sensitive to regime shift and class imbalance.
 \end{abstract}
 \vspace{1em}
 
@@ -37,15 +37,19 @@ Financial return prediction is difficult because short-horizon stock movements a
 
 Predicting stock returns is a central problem in financial machine learning, but it is also a difficult one. Daily returns contain substantial noise, and predictive relationships can change quickly as market regimes shift. Traditional approaches often rely on price-derived technical indicators, such as momentum, relative strength, moving-average convergence divergence, and volatility measures. However, financial markets also respond to information outside the price series, including news, social media discussion, earnings narratives, and investor sentiment.
 
-This project investigates whether combining market indicators with daily sentiment scores improves short-horizon stock prediction. We frame the task as a supervised sequence learning problem: given a rolling window of recent financial and sentiment features, the model predicts the future five-trading-day return for a stock. We evaluate recurrent neural networks because LSTM and GRU models are designed to summarize temporal dependencies in ordered data.
+This project investigates whether combining market indicators with daily sentiment scores improves short-horizon stock prediction. We frame the task as a supervised sequence learning problem: given a rolling window of recent financial and sentiment features, the model predicts the future five-trading-day return for a stock. Because practical use also depends on whether a stock is expected to increase, decrease, or remain approximately flat, we additionally evaluate three-way directional prediction. We evaluate recurrent neural networks because LSTM and GRU models are designed to summarize temporal dependencies in ordered data.
 
-The main contribution of this experiment is an end-to-end empirical comparison between tuned LSTM and GRU models on a shared dataset and split. Rather than reporting only classification accuracy, we evaluate both regression error and directional correctness. This is important because a model can achieve low return error by predicting values close to zero while still failing to provide useful directional information.
+The main contribution of this experiment is an end-to-end empirical comparison between tuned LSTM and GRU models on a shared dataset and split. Rather than reporting only classification accuracy, we evaluate both regression error and directional correctness. We first study recurrent models trained only to predict continuous returns, where direction is obtained by thresholding the predicted return. We then implement multitask LSTM and GRU architectures that share the same sequence-processing layer but jointly optimize return magnitude and a three-class direction head. This distinction is important because a model can achieve low return error by predicting values close to zero while still failing to provide useful directional information.
 
 \section{Data and Features}
 
 \subsection{Dataset}
 
-The dataset contains daily observations for five large-cap technology stocks: AAPL, AMZN, META, NVDA, and TSLA. The final processed dataset covers January 23, 2020 through December 22, 2022 and contains 3,685 stock-day rows. The data are split chronologically to avoid look-ahead leakage: observations through December 31, 2021 are used for training, observations from January 2022 through June 2022 are used for validation, and observations after June 30, 2022 are used for testing. This produces 2,455 raw training rows, 620 validation rows, and 610 test rows.
+The dataset contains daily observations for five large-cap technology stocks: AAPL, AMZN, META, NVDA, and TSLA. The StockTwits data consist of scraped raw messages, searched by ticker, with optional user-provided \textit{Bullish} and \textit{Bearish} labels. These labels are not complete annotations for every message; an unlabeled message is therefore treated as unknown sentiment rather than neutral sentiment.
+
+The available StockTwits message coverage varies slightly by ticker: AAPL ends on February 27, 2022, AMZN and FB/META end on March 5, 2022, NVDA ends on February 28, 2022, and TSLA ends on March 1, 2022. To avoid evaluating sentiment models in a period with no real sentiment observations, the final experiment is restricted to January 2020 through February 2022. After technical-indicator warmup and the five-day future-return target construction, the modeled dataset covers January 23, 2020 through February 18, 2022 and contains 2,625 stock-day rows.
+
+The data are split chronologically to avoid look-ahead leakage: observations through April 30, 2021 are assigned to training, observations from May 1, 2021 through August 31, 2021 are assigned to validation, and observations after August 31, 2021 are assigned to testing. Because the prediction target uses a future five-trading-day return, we purge samples whose target window crosses a split boundary. Since sequence length is tuned, the exact number of training sequences varies by model configuration; for a representative 20-day lookback window, the final sequence split contains 1,485 training sequences, 400 validation sequences, and 595 test sequences.
 
 \subsection{Market Features}
 
@@ -69,13 +73,14 @@ The sentiment feature set consists of daily aggregated sentiment statistics:
 \begin{itemize}
     \item positive sentiment score,
     \item negative sentiment score,
-    \item neutral sentiment score,
+    \item neutral or missing-sentiment fallback score,
     \item aggregate sentiment score,
     \item sentiment confidence,
-    \item article count.
+    \item article count,
+    \item message count.
 \end{itemize}
 
-These variables are aligned at the daily ticker level and merged with the market indicators. All input features are standardized using only the training period statistics, then the same scaler is applied to validation and test data.
+For StockTwits rows with explicit \textit{Bullish} or \textit{Bearish} labels, sentiment scores are computed directly from those labels and averaged by ticker-day. The raw StockTwits data used here do not provide an explicit neutral label, so the neutral score is not an observed neutral-sentiment annotation. Instead, it is a constructed fallback used when no labeled bullish or bearish sentiment is available for a ticker-day. Unlabeled rows are excluded from the sentiment averages, but they are retained in a separate message-count feature. Thus, article count measures the number of labeled sentiment messages, while message count measures total StockTwits activity. These variables are aligned at the daily ticker level and merged with the market indicators. Technical indicators are kept in their raw constructed scale during feature building; all model input features are then standardized once using only the training-period statistics, and the same scaler is applied to validation and test data.
 
 \section{Methodology}
 
@@ -102,25 +107,56 @@ This separates meaningful positive and negative moves from near-flat outcomes.
 
 \subsection{Sequence Construction}
 
-For each ticker, observations are sorted chronologically and converted into rolling sequences. A sequence contains the previous $T$ daily feature vectors, where $T$ is tuned as a hyperparameter. The model outputs one scalar prediction for the future five-day return associated with the sequence end date. Some tuning trials include the current row in the sequence, while others use only strictly prior rows.
+For each ticker, observations are sorted chronologically and converted into rolling sequences. A sequence contains $T$ daily feature vectors ending at day $t$, where $T$ is tuned as a hyperparameter. The model outputs one scalar prediction for the future five-day return from day $t$ to day $t+5$. This corresponds to a realistic end-of-day setup in which the day-$t$ market and sentiment features are available before the prediction is made. To prevent label overlap across chronological splits, training and validation samples are purged if their target end date falls beyond the corresponding split boundary.
 
 \subsection{Models}
 
-We evaluate two recurrent architectures:
+Both neural models follow the same high-level structure. For a stock-day sequence $X_i \in \mathbb{R}^{T \times d}$, where $T$ is the lookback length and $d$ is the number of input features, the LSTM or GRU layer reads the sequence and produces hidden states $H_i = (h_1,\ldots,h_T)$. These hidden states are reduced to a fixed-dimensional representation $z_i$ using a tuned pooling rule. The return-only models pass $z_i$ through a feedforward head:
 
-\textbf{LSTM.} The tuned LSTM uses gated memory cells to preserve long-range temporal information. The best validation configuration uses a 20-day sequence length, excludes the current row, has hidden size 16, three recurrent layers, bidirectional recurrence, a 32-unit classifier head, fully connected dropout of 0.2, Adam optimization, and Smooth L1 loss.
+\begin{equation}
+\hat{y}_i = f_{\theta}(z_i),
+\end{equation}
 
-\textbf{GRU.} The GRU is a lighter recurrent model with update and reset gates. The GRU tuner searches a broader architecture space, including sequence length, hidden size, recurrent depth, bidirectionality, dropout, pooling strategy, activation function, layer normalization, optimizer, weight decay, batch size, loss function, target scaling, and gradient clipping. The best balanced GRU configuration uses a 10-day sequence length, excludes the current row, hidden size 128, four recurrent layers, max pooling over sequence outputs, layer normalization, a two-layer tanh regression head, AdamW optimization, MAE loss, learning rate 0.001, weight decay $10^{-6}$, dropout 0.1 in the GRU and 0.2 in the fully connected head, and gradient clipping at 1.0.
+where $\hat{y}_i$ is the predicted future five-day return. Directional labels are then obtained only after prediction, by thresholding the continuous return prediction.
+
+The final experiments add multitask versions of both architectures. The multitask models keep the same LSTM or GRU sequence layer, but attach two prediction heads:
+
+\begin{align}
+\hat{y}_i &= f_{\theta}^{(r)}(z_i), \\
+\hat{\mathbf{p}}_i &= \mathrm{softmax}(f_{\theta}^{(d)}(z_i)),
+\end{align}
+
+where $\hat{y}_i$ is the predicted continuous return and $\hat{\mathbf{p}}_i$ is a probability distribution over the three direction classes: down, flat, and up. The model is trained with a weighted sum of regression and direction losses:
+
+\begin{equation}
+\mathcal{L} = \mathcal{L}_{reg}(y_i,\hat{y}_i) + \lambda \mathcal{L}_{ce}(d_i,\hat{\mathbf{p}}_i),
+\end{equation}
+
+where $\lambda$ is tuned. This architecture makes stable or near-flat returns an explicit class rather than treating them as an after-the-fact thresholding artifact.
+
+\textbf{LSTM.} The long short-term memory model is designed to address vanishing-gradient problems in recurrent networks by maintaining both a hidden state $h_t$ and a cell state $c_t$ \cite{hochreiter1997lstm}. Its input, forget, and output gates control how much new information is written, how much past state is retained, and how much memory is exposed to the next layer. This makes the LSTM a natural baseline for financial sequences, where a signal may depend on multi-week patterns such as trend persistence, volatility buildup, or sentiment accumulation. To make the comparison with GRU more controlled, the LSTM tuner uses the same non-recurrent search space as the GRU tuner: sequence length, hidden size, recurrent depth, pooling strategy, layer normalization, regression-head depth, activation function, dropout, optimizer, weight decay, batch size, loss function, target scaling, and gradient clipping.
+
+\textbf{GRU.} The gated recurrent unit is a more compact gated architecture introduced in encoder-decoder recurrent networks \cite{cho2014gru}. It merges the separate LSTM memory and hidden states into a single hidden state and uses update and reset gates to decide how much historical information to preserve or overwrite. This reduces the number of parameters relative to an LSTM with comparable hidden size, which can be useful in this project because the chronological training set is small and noisy. The GRU uses the same fixed forecasting information set and matched tuning space as the LSTM, with the recurrent cell type as the primary architectural difference.
+
+The two architectures therefore test different inductive biases. The LSTM has a larger explicit memory mechanism, while the GRU has fewer recurrent parameters per hidden unit. Both searches restrict recurrence to the forward time direction, avoiding bidirectional encoders so that the model structure mirrors the forecasting chronology. In the multitask experiments, the LSTM or GRU cell type remains the core architectural difference; the shared encoder and two-head output design are otherwise matched.
 
 \subsection{Hyperparameter Selection}
 
-Hyperparameters are selected using validation performance only. The tuning objective combines RMSE and MAE with additional terms for directional accuracy, correlation, and prediction collapse. The collapse penalty is included because early trials sometimes achieved competitive RMSE by predicting nearly constant small returns, which is not useful for directional forecasting. The final checkpoint for each model is selected from the best validation epoch under early stopping.
+Hyperparameters are selected using validation performance only. Each LSTM and GRU experiment uses a 60-trial random search with a fixed training seed for reproducibility. The return-only tuning objective combines RMSE and MAE with rewards for positive correlation and directional lift over the validation majority-class direction baseline, plus penalties for negative correlation and prediction collapse. The collapse penalty is included because early trials sometimes achieved competitive RMSE by predicting nearly constant small returns, which is not useful for directional forecasting.
+
+The multitask tuner uses the same core architecture space while also tuning the direction-loss weight and whether to apply balanced class weights to the cross-entropy direction loss. The multitask selection score includes regression error, correlation, direction-head lift, and macro F1. Macro F1 is included because the flat class is rare and raw accuracy can be dominated by the majority direction. Candidate models use Adam or AdamW optimization \cite{kingma2015adam,loshchilov2019adamw}. Random seeds are recorded to make stochastic initialization and training reproducible, but they are not treated as model hyperparameters. The final checkpoint for each model is selected from the best validation epoch under early stopping.
+
+\subsection{Feature Ablations}
+
+To evaluate the contribution of each feature family, we run two return-only ablation settings for both LSTM and GRU models. The technical-only setting uses returns, RSI, MACD, Bollinger Band position, momentum, and volume. The sentiment-only setting uses the seven daily sentiment and activity features. For each subset model, we run a separate 60-trial random search over the same matched hyperparameter space and select the best validation checkpoint. This subset-specific tuning is more informative than simply removing columns from a previously tuned combined-feature model, because the optimal sequence length, recurrence width, optimizer, and regularization can change when the input representation changes.
+
+Because the technical-only ablations were weaker than sentiment-only models in the return-only study, the multitask follow-up focuses on the two most relevant feature settings: combined features and sentiment-only features. We tune four multitask models in total: sentiment-only LSTM, sentiment-only GRU, combined-feature LSTM, and combined-feature GRU.
 
 \section{Experiments}
 
 \subsection{Evaluation Metrics}
 
-The primary regression metrics are mean absolute error (MAE) and root mean squared error (RMSE). We also report directional accuracy using the three-way direction mapping above, Pearson correlation between actual and predicted returns, prediction mean, and prediction standard deviation.
+The primary regression metrics are mean absolute error (MAE) and root mean squared error (RMSE). We also report Pearson correlation between actual and predicted returns, prediction mean, and prediction standard deviation. Directional performance is measured using the three-way direction mapping above. For return-only models, direction is computed by thresholding the predicted return. For multitask models, direction is computed from the three-class direction head. We report both accuracy and macro F1; macro F1 gives equal weight to down, flat, and up classes and is therefore more informative when one class dominates a chronological split.
 
 \subsection{Baselines}
 
@@ -132,7 +168,7 @@ We compare the recurrent models against simple baselines:
     \item always-up, always-down, and always-flat direction baselines.
 \end{itemize}
 
-These baselines are important because the 2022 test period is bearish for several technology stocks. A naive always-down directional classifier is therefore unusually strong on the test split.
+These baselines are important because the September 2021 through February 2022 test period has a strong negative directional skew for several technology stocks. A naive always-down directional classifier is therefore unusually strong on the test split.
 
 \section{Results}
 
@@ -143,46 +179,204 @@ These baselines are important because the 2022 test period is bearish for severa
 \toprule
 Model & MAE & RMSE & Dir. Acc. & Corr. \\
 \midrule
-LSTM & 0.0574 & 0.0752 & 0.5148 & 0.0908 \\
-GRU & 0.0597 & 0.0782 & 0.5180 & 0.0866 \\
-Zero return & 0.0580 & 0.0759 & 0.0623 & -- \\
-Train mean & 0.0604 & 0.0788 & 0.4197 & -- \\
+LSTM & 0.0531 & 0.0713 & 0.3664 & -0.0710 \\
+GRU & 0.0502 & 0.0680 & 0.3143 & -0.1687 \\
+Zero return & 0.0448 & 0.0639 & 0.1025 & -- \\
+Train mean & 0.0487 & 0.0664 & 0.3950 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Test performance for five-day return prediction.}
+\caption{Return-only combined-feature test performance for five-day return prediction. Directional accuracy is computed by thresholding the predicted return.}
 \end{table}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+Model & Feature Set & MAE & RMSE & Dir. Acc. & Corr. & Pred. Std. \\
+\midrule
+LSTM & Combined & 0.0531 & 0.0713 & 0.3664 & -0.0710 & 0.0176 \\
+LSTM & Technical only & 0.0531 & 0.0727 & 0.3445 & -0.0769 & 0.0223 \\
+LSTM & Sentiment only & \textbf{0.0488} & \textbf{0.0662} & 0.3647 & \textbf{0.0461} & 0.0137 \\
+GRU & Combined & 0.0502 & 0.0680 & 0.3143 & -0.1687 & 0.0084 \\
+GRU & Technical only & 0.0504 & 0.0684 & 0.3529 & -0.0240 & 0.0153 \\
+GRU & Sentiment only & 0.0521 & 0.0698 & \textbf{0.3899} & 0.0459 & 0.0241 \\
+\bottomrule
+\end{tabular}
+\caption{Return-only feature-ablation results on the held-out test set after purged splitting and matched LSTM/GRU search spaces. Sentiment-only LSTM minimizes recurrent-model regression error and obtains the strongest positive correlation, while sentiment-only GRU has the highest thresholded recurrent directional accuracy.}
+\end{table*}
 
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{lccc}
+\begin{tabular}{lcc}
 \toprule
-Direction Baseline & Up & Down & Flat \\
+Direction Baseline & Accuracy & Macro F1 \\
 \midrule
-Test accuracy & 0.4197 & 0.5180 & 0.0623 \\
+Always up & 0.3950 & 0.1888 \\
+Always down & 0.5025 & 0.2230 \\
+Always flat & 0.1025 & 0.0620 \\
 \bottomrule
 \end{tabular}
-\caption{Direction-only baselines on the 2022 test split.}
+\caption{Direction-only baselines on the September 2021 through February 2022 test split. Accuracy favors the always-down baseline because the test set contains more negative than positive or flat examples.}
 \end{table}
 
-The tuned LSTM obtains the best regression performance, with MAE 0.0574 and RMSE 0.0752. It slightly outperforms the zero-return baseline on MAE but not by a large margin. The GRU achieves MAE 0.0597 and RMSE 0.0782. Its directional accuracy is 0.5180, which is marginally higher than the LSTM directional accuracy but equal to the always-down baseline. Both recurrent models produce weak positive test correlations with future returns, around 0.09.
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccccc}
+\toprule
+Model & Feature Set & MAE & RMSE & Corr. & Thr. Acc. & Head Acc. & Macro F1 \\
+\midrule
+LSTM & Combined & 0.0510 & 0.0688 & -0.0191 & 0.3345 & 0.3882 & \textbf{0.2883} \\
+LSTM & Sentiment only & 0.0500 & 0.0668 & \textbf{0.0365} & 0.3882 & 0.4185 & 0.2722 \\
+GRU & Combined & 0.0500 & 0.0682 & -0.0797 & 0.3109 & 0.3849 & 0.2676 \\
+GRU & Sentiment only & \textbf{0.0490} & \textbf{0.0668} & -0.0150 & 0.3479 & \textbf{0.4218} & 0.2543 \\
+\bottomrule
+\end{tabular}
+\caption{Multitask test performance after 60-trial tuning for the four final models. The thresholded accuracy column uses the return head; the head-accuracy and macro-F1 columns use the explicit three-class direction head.}
+\end{table*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.82\textwidth]{figures/feature_subset_error_metrics.pdf}
+\caption{Held-out MAE and RMSE for tuned return-only combined-feature and subset-specific models. Error metrics favor low-variance predictions, so they should be interpreted jointly with correlation and directional metrics.}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.82\textwidth]{figures/feature_subset_signal_metrics.pdf}
+\caption{Directional accuracy and return correlation for tuned return-only combined-feature and subset-specific models. The dashed line marks the always-down directional baseline, which is strong because the test period is negatively skewed.}
+\end{figure*}
+
+Under the matched return-only combined-feature search, the GRU obtains lower regression error than the LSTM, with MAE 0.0502 and RMSE 0.0680, but its test correlation is negative and its thresholded directional accuracy is only 0.3143. The combined-feature LSTM has MAE 0.0531, RMSE 0.0713, directional accuracy 0.3664, and correlation -0.0710. Both combined-feature recurrent models remain weaker than the zero-return baseline on regression error, and both underperform the always-down direction baseline in directional accuracy.
+
+The feature-ablation results refine this conclusion. Sentiment-only LSTM achieves the lowest MAE and RMSE among recurrent models, with MAE 0.0488 and RMSE 0.0662, and it also has the strongest positive correlation at 0.0461. Sentiment-only GRU achieves the highest recurrent directional accuracy at 0.3899 and a similar positive correlation of 0.0459. Technical-only models do not improve the recurrent results on this split, suggesting that the StockTwits-derived sentiment and activity features carry more of the weak out-of-sample signal than the selected technical indicators.
+
+The multitask models improve the directional behavior of the recurrent models, but only partially. For all four final feature-architecture pairs, the explicit direction head has higher test accuracy than the direction obtained by thresholding the return head. Sentiment-only GRU has the highest direction-head accuracy at 0.4218, followed by sentiment-only LSTM at 0.4185. Combined-feature LSTM has the best macro F1 at 0.2883, indicating that it is less dominated by one direction class than the other multitask models. However, none of the multitask models beats the always-down baseline's raw accuracy of 0.5025. This is mostly a class-distribution effect: the held-out period contains many more down examples than flat examples, so a naive always-down rule obtains high accuracy while having weak macro F1.
 
 \section{Discussion}
 
-The results show that sentiment-enhanced recurrent models can learn weak predictive structure, but the signal is limited. The strongest result is the tuned LSTM's RMSE of 0.0752 and positive correlation of 0.0908. However, the zero-return baseline remains very competitive on RMSE. This suggests that much of the five-day return target is dominated by noise, and minimizing regression error encourages models to produce conservative predictions near the center of the return distribution.
+The results show that sentiment-enhanced recurrent models can learn weak predictive structure, but the signal is limited and metric-dependent. After introducing the purged split, removing ticker-level normalization during technical-feature construction, fixing the forecasting information set, and matching the LSTM and GRU search spaces, the strongest return-only results come from sentiment-only models rather than the combined feature set. The sentiment-only LSTM has the lowest return-only recurrent-model error and the strongest positive correlation, while the sentiment-only GRU has the highest thresholded recurrent directional accuracy. This suggests that the StockTwits label and activity features contain weak out-of-sample information, but the signal is not strong enough to clearly beat simple baselines.
 
-The GRU tuning experiment highlights this problem clearly. Initial searches selected models with low error but collapsed prediction variance and poor directional accuracy. After adding objective penalties for collapsed predictions and rewards for direction and correlation, the selected GRU produced more directionally useful validation behavior. Even so, its final test directional accuracy matched the always-down baseline because the test period contains more negative than positive five-day moves. This indicates that directional accuracy alone can be misleading under imbalanced market regimes.
+The multitask experiment directly addresses a weakness of the return-only setup. In the original models, direction was inferred by thresholding a scalar return prediction, so the model was never explicitly trained to distinguish down, flat, and up outcomes. The multitask architecture makes this distinction part of the model by training a direction head alongside the return head. This improves directional accuracy for all four final model settings. For example, sentiment-only GRU rises from 0.3899 thresholded directional accuracy in the return-only experiment to 0.4218 direction-head accuracy in the multitask experiment, while sentiment-only LSTM rises from 0.3647 to 0.4185.
 
-Overall, the LSTM is the stronger model in this experiment. It has lower MAE and RMSE than the GRU and maintains similar directional accuracy and correlation. The GRU remains useful as a comparison point because it is computationally simpler and reaches a comparable direction score, but its return-error performance is weaker.
+However, the improvement is not enough to overcome the main difficulty of the held-out period. The test split is negatively skewed, so the always-down baseline reaches 0.5025 accuracy. The multitask models are more informative than this baseline by macro F1, but they still struggle to identify flat days and often collapse toward up or down predictions. This is visible in the confusion matrices saved with the model outputs: the sentiment-only multitask models assign almost no examples to the flat class. The flat class is therefore present in the task definition and the architecture, but it remains hard to learn from the available data.
+
+The combined-feature results are also weaker than expected. Adding technical indicators to sentiment does not reliably improve test correlation or direction accuracy. One plausible explanation is that the selected technical indicators and raw volume features add noise or regime-specific relationships that are useful on the validation period but do not transfer to the September 2021 through February 2022 test period. This is consistent with the validation-test regime shift: the validation split is majority positive by direction, whereas the test split is majority negative. A model selected partly for validation directional lift can therefore lose directional accuracy when the market regime reverses.
+
+Overall, the study argues against a simple conclusion that either architecture is uniformly better. The return-only LSTM is strongest on sentiment-only error and correlation, multitask GRU is strongest on direction-head accuracy, and multitask LSTM with combined features has the best macro F1. The more important finding is that all recurrent models remain fragile relative to simple baselines. The results should therefore be interpreted as evidence of weak sentiment signal and as evidence that multitask direction modeling is a useful refinement, not as evidence of a deployable forecasting model.
 
 \section{Limitations}
 
-There are several limitations. First, the dataset includes only five technology stocks, so the results may not generalize to broader sectors or market regimes. Second, the test split is concentrated in the second half of 2022, a period with a strong bearish bias for technology stocks. Third, the sentiment features are daily aggregates, which may lose intraday timing information and article-level nuance. Fourth, the models optimize return regression even though practical trading decisions often depend more directly on directional classification, ranking, or risk-adjusted returns.
+There are several limitations. First, the dataset includes only five technology stocks, so the results may not generalize to broader sectors or market regimes. Second, the available StockTwits sentiment coverage ends around late February or early March 2022, limiting the amount of chronological test data available with real sentiment observations. Third, the user-provided StockTwits labels contain only explicit Bullish and Bearish tags; unlabeled messages are unknown rather than true neutral examples, and the neutral score is therefore a missing-sentiment fallback rather than an observed neutral label. Fourth, the sentiment features are daily aggregates, which may lose intraday timing information and message-level nuance. Fifth, although the multitask models explicitly include a flat direction class, the flat class is relatively rare and remains difficult to learn without stronger class-balancing or calibration. Sixth, the models optimize return regression and direction classification, but practical trading decisions may depend more directly on ranking, transaction costs, risk-adjusted returns, or portfolio-level objectives. Finally, the experiments use a finite 60-trial search budget and a single fixed training seed for reproducibility; a stronger robustness analysis would repeat the selected configurations across multiple training seeds and report the variance of the test metrics.
 
 \section{Conclusion}
 
-This study evaluates LSTM and GRU sequence models for five-day return prediction using combined technical and sentiment features. The tuned LSTM performs best overall, achieving MAE 0.0574, RMSE 0.0752, directional accuracy 0.5148, and correlation 0.0908 on the held-out test set. The tuned GRU achieves similar directional accuracy but weaker regression error. The experiments suggest that sentiment and market features contain some weak predictive signal, but the current recurrent regression setup is not yet strong enough to clearly outperform simple baselines across all metrics.
+This study evaluates LSTM and GRU sequence models for five-day return prediction using combined technical and sentiment features. After correcting the sentiment coverage window, treating unlabeled StockTwits rows as unknown rather than neutral, using a purged chronological split, and matching the LSTM and GRU search spaces, the strongest return-only recurrent results come from sentiment-only ablations. Sentiment-only LSTM achieves the lowest return-only recurrent-model test error (MAE 0.0488, RMSE 0.0662) and the strongest positive correlation (0.0461), while sentiment-only GRU achieves the highest thresholded recurrent directional accuracy (0.3899).
 
-Future work should consider a multitask objective that jointly predicts return magnitude and direction, direct classification of up/down/flat movement, calibration against class imbalance, richer textual representations, and broader cross-sectional data. These changes may better align the learning objective with the financial forecasting problem than pure five-day return regression.
+The multitask extension improves directional prediction by making down, flat, and up movement explicit model outputs. Sentiment-only GRU achieves the highest multitask direction-head accuracy (0.4218), sentiment-only LSTM keeps the strongest positive multitask correlation (0.0365), and combined-feature LSTM achieves the best multitask macro F1 (0.2883). These gains show that the multitask architecture is a better match for the financial decision problem than training only on continuous return prediction, but the models still do not clearly outperform simple baselines across all metrics. Future work should consider stronger class balancing, calibrated decision thresholds, richer textual representations, broader cross-sectional data, and objectives tied more directly to ranking or risk-adjusted trading performance.
+
+\clearpage
+
+\begin{thebibliography}{9}
+
+\bibitem{hochreiter1997lstm}
+S. Hochreiter and J. Schmidhuber.
+\newblock Long short-term memory.
+\newblock \textit{Neural Computation}, 9(8):1735--1780, 1997.
+
+\bibitem{cho2014gru}
+K. Cho, B. van Merrienboer, C. Gulcehre, D. Bahdanau, F. Bougares, H. Schwenk, and Y. Bengio.
+\newblock Learning phrase representations using RNN encoder-decoder for statistical machine translation.
+\newblock In \textit{Proceedings of EMNLP}, 2014.
+
+\bibitem{kingma2015adam}
+D. P. Kingma and J. Ba.
+\newblock Adam: A method for stochastic optimization.
+\newblock In \textit{International Conference on Learning Representations}, 2015.
+
+\bibitem{loshchilov2019adamw}
+I. Loshchilov and F. Hutter.
+\newblock Decoupled weight decay regularization.
+\newblock In \textit{International Conference on Learning Representations}, 2019.
+
+\end{thebibliography}
+
+\clearpage
+
+\appendix
+
+\section{Best Tuned Model Configurations}
+
+All final models use the same forecasting information set: sequences include the current day, recurrence is forward-only rather than bidirectional, targets are scaled during training, and the training seed is fixed at 42 for reproducibility. The random search selects hyperparameters using validation performance only. The first two tables report the return-only configurations, and the final two tables report the multitask configurations.
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\begin{tabular}{llcccccccc}
+\toprule
+Model & Feature Set & Seq. & Hidden & Layers & Pooling & Layer Norm & Head & Activation & Dropout \\
+\midrule
+LSTM & Combined & 30 & 24 & 1 & last+mean & yes & 2 $\times$ 32 & GELU & 0.0 / 0.1 \\
+LSTM & Technical only & 20 & 24 & 1 & last & yes & 1 $\times$ 32 & ReLU & 0.0 / 0.0 \\
+LSTM & Sentiment only & 10 & 64 & 1 & mean & no & 1 $\times$ 8 & tanh & 0.0 / 0.3 \\
+GRU & Combined & 20 & 64 & 1 & mean & yes & 2 $\times$ 16 & ReLU & 0.0 / 0.3 \\
+GRU & Technical only & 45 & 24 & 2 & last & yes & 1 $\times$ 16 & ReLU & 0.1 / 0.1 \\
+GRU & Sentiment only & 20 & 32 & 2 & last & no & 1 $\times$ 32 & GELU & 0.1 / 0.1 \\
+\bottomrule
+\end{tabular}
+\caption{Best recurrent architecture configurations selected by validation search. Dropout is reported as recurrent dropout / fully connected dropout.}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\begin{tabular}{llccccccc}
+\toprule
+Model & Feature Set & Optimizer & LR & Weight Decay & Batch & Loss & Grad. Clip & Best Trial / Epochs \\
+\midrule
+LSTM & Combined & Adam & $3\times10^{-4}$ & $10^{-4}$ & 32 & MAE & none & 39 / 26 \\
+LSTM & Technical only & AdamW & $10^{-3}$ & $10^{-5}$ & 16 & MAE & 0.25 & 25 / 16 \\
+LSTM & Sentiment only & Adam & $10^{-3}$ & $10^{-5}$ & 32 & MAE & 0.5 & 28 / 37 \\
+GRU & Combined & Adam & $3\times10^{-4}$ & $10^{-5}$ & 16 & MSE & 1.0 & 12 / 19 \\
+GRU & Technical only & AdamW & $3\times10^{-4}$ & $10^{-5}$ & 32 & MAE & 1.0 & 35 / 43 \\
+GRU & Sentiment only & AdamW & $10^{-3}$ & $10^{-4}$ & 64 & MAE & 1.0 & 49 / 35 \\
+\bottomrule
+\end{tabular}
+\caption{Best optimization and training configurations selected by validation search. Each model was selected from a 60-trial random search over the matched LSTM/GRU hyperparameter space.}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\begin{tabular}{llcccccccc}
+\toprule
+Model & Feature Set & Seq. & Hidden & Layers & Pooling & Layer Norm & Head & Activation & Dropout \\
+\midrule
+LSTM & Combined & 20 & 64 & 1 & mean & yes & 2 $\times$ 16 & ReLU & 0.0 / 0.3 \\
+LSTM & Sentiment only & 20 & 96 & 2 & last & yes & 2 $\times$ 16 & ReLU & 0.0 / 0.1 \\
+GRU & Combined & 20 & 96 & 1 & last+mean & no & 2 $\times$ 8 & GELU & 0.0 / 0.3 \\
+GRU & Sentiment only & 30 & 48 & 3 & last & yes & 2 $\times$ 32 & tanh & 0.0 / 0.0 \\
+\bottomrule
+\end{tabular}
+\caption{Best multitask architecture configurations selected by validation search. Dropout is reported as recurrent dropout / fully connected dropout.}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\begin{tabular}{llcccccccc}
+\toprule
+Model & Feature Set & Optimizer & LR & Weight Decay & Batch & Reg. Loss & Dir. Wt. & Class Wt. & Trial / Epochs \\
+\midrule
+LSTM & Combined & Adam & $3\times10^{-4}$ & $10^{-5}$ & 16 & MSE & 2.0 & balanced & 4 / 47 \\
+LSTM & Sentiment only & Adam & $3\times10^{-4}$ & 0 & 32 & MAE & 2.0 & none & 54 / 39 \\
+GRU & Combined & AdamW & $10^{-3}$ & $10^{-5}$ & 32 & SmoothL1 & 0.1 & balanced & 46 / 17 \\
+GRU & Sentiment only & AdamW & $10^{-4}$ & $10^{-6}$ & 64 & MAE & 2.0 & none & 24 / 54 \\
+\bottomrule
+\end{tabular}
+\caption{Best multitask optimization configurations selected by validation search. Direction weight is the coefficient $\lambda$ on the three-class cross-entropy loss.}
+\end{table*}
 
 \end{document}

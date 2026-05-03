@@ -1,0 +1,142 @@
+[multitask] model=gru features=sentiment_only device=cpu trials=60 max_epochs=80
+[multitask] trial=001/060 score=0.045321 val_rmse=0.042253 val_dir_acc=0.5050 val_macro_f1=0.3812 epochs=25 best=0.045321
+[multitask] trial=002/060 score=0.044157 val_rmse=0.041842 val_dir_acc=0.4050 val_macro_f1=0.3783 epochs=32 best=0.044157
+[multitask] trial=003/060 score=0.041598 val_rmse=0.041780 val_dir_acc=0.5800 val_macro_f1=0.3290 epochs=50 best=0.041598
+[multitask] trial=004/060 score=0.044506 val_rmse=0.043107 val_dir_acc=0.5325 val_macro_f1=0.3714 epochs=44 best=0.041598
+[multitask] trial=005/060 score=0.053147 val_rmse=0.042252 val_dir_acc=0.4425 val_macro_f1=0.3104 epochs=38 best=0.041598
+[multitask] trial=006/060 score=0.047159 val_rmse=0.044788 val_dir_acc=0.4275 val_macro_f1=0.3994 epochs=29 best=0.041598
+[multitask] trial=007/060 score=0.041786 val_rmse=0.041391 val_dir_acc=0.4900 val_macro_f1=0.4006 epochs=36 best=0.041598
+[multitask] trial=008/060 score=0.045184 val_rmse=0.042467 val_dir_acc=0.4100 val_macro_f1=0.3570 epochs=45 best=0.041598
+[multitask] trial=009/060 score=0.046656 val_rmse=0.044111 val_dir_acc=0.4125 val_macro_f1=0.3812 epochs=22 best=0.041598
+[multitask] trial=010/060 score=0.041587 val_rmse=0.041739 val_dir_acc=0.5725 val_macro_f1=0.3371 epochs=38 best=0.041587
+[multitask] trial=011/060 score=0.052071 val_rmse=0.043089 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=16 best=0.041587
+[multitask] trial=012/060 score=0.048875 val_rmse=0.042879 val_dir_acc=0.3250 val_macro_f1=0.2782 epochs=19 best=0.041587
+[multitask] trial=013/060 score=0.060077 val_rmse=0.042713 val_dir_acc=0.3950 val_macro_f1=0.2807 epochs=11 best=0.041587
+[multitask] trial=014/060 score=0.044174 val_rmse=0.043703 val_dir_acc=0.5050 val_macro_f1=0.4375 epochs=24 best=0.041587
+[multitask] trial=015/060 score=0.044689 val_rmse=0.042663 val_dir_acc=0.4800 val_macro_f1=0.3384 epochs=18 best=0.041587
+[multitask] trial=016/060 score=0.049339 val_rmse=0.042609 val_dir_acc=0.4400 val_macro_f1=0.3696 epochs=18 best=0.041587
+[multitask] trial=017/060 score=0.053030 val_rmse=0.042728 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=49 best=0.041587
+[multitask] trial=018/060 score=0.042288 val_rmse=0.041927 val_dir_acc=0.5575 val_macro_f1=0.3402 epochs=21 best=0.041587
+[multitask] trial=019/060 score=0.047879 val_rmse=0.043135 val_dir_acc=0.5475 val_macro_f1=0.3447 epochs=41 best=0.041587
+[multitask] trial=020/060 score=0.045481 val_rmse=0.042060 val_dir_acc=0.3600 val_macro_f1=0.3489 epochs=24 best=0.041587
+[multitask] trial=021/060 score=0.043467 val_rmse=0.042819 val_dir_acc=0.5725 val_macro_f1=0.3201 epochs=65 best=0.041587
+[multitask] trial=022/060 score=0.059206 val_rmse=0.042774 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=16 best=0.041587
+[multitask] trial=023/060 score=0.051451 val_rmse=0.042784 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=20 best=0.041587
+[multitask] trial=024/060 score=0.039754 val_rmse=0.041767 val_dir_acc=0.6175 val_macro_f1=0.3798 epochs=54 best=0.039754
+[multitask] trial=025/060 score=0.053238 val_rmse=0.042566 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=25 best=0.039754
+[multitask] trial=026/060 score=0.051347 val_rmse=0.042711 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=24 best=0.039754
+[multitask] trial=027/060 score=0.040302 val_rmse=0.041209 val_dir_acc=0.5800 val_macro_f1=0.3696 epochs=28 best=0.039754
+[multitask] trial=028/060 score=0.040830 val_rmse=0.041631 val_dir_acc=0.5925 val_macro_f1=0.3431 epochs=67 best=0.039754
+[multitask] trial=029/060 score=0.049625 val_rmse=0.041911 val_dir_acc=0.5500 val_macro_f1=0.2803 epochs=41 best=0.039754
+[multitask] trial=030/060 score=0.048963 val_rmse=0.042330 val_dir_acc=0.4350 val_macro_f1=0.3683 epochs=30 best=0.039754
+[multitask] trial=031/060 score=0.040441 val_rmse=0.041432 val_dir_acc=0.5725 val_macro_f1=0.3957 epochs=31 best=0.039754
+[multitask] trial=032/060 score=0.052180 val_rmse=0.043733 val_dir_acc=0.4375 val_macro_f1=0.3085 epochs=68 best=0.039754
+[multitask] trial=033/060 score=0.043681 val_rmse=0.042485 val_dir_acc=0.4875 val_macro_f1=0.3869 epochs=21 best=0.039754
+[multitask] trial=034/060 score=0.047346 val_rmse=0.042643 val_dir_acc=0.4100 val_macro_f1=0.3519 epochs=20 best=0.039754
+[multitask] trial=035/060 score=0.042900 val_rmse=0.042520 val_dir_acc=0.5625 val_macro_f1=0.3413 epochs=50 best=0.039754
+[multitask] trial=036/060 score=0.044191 val_rmse=0.042598 val_dir_acc=0.5200 val_macro_f1=0.3384 epochs=23 best=0.039754
+[multitask] trial=037/060 score=0.043007 val_rmse=0.042067 val_dir_acc=0.5550 val_macro_f1=0.3141 epochs=68 best=0.039754
+[multitask] trial=038/060 score=0.040313 val_rmse=0.041653 val_dir_acc=0.6050 val_macro_f1=0.3568 epochs=71 best=0.039754
+[multitask] trial=039/060 score=0.045111 val_rmse=0.042089 val_dir_acc=0.4700 val_macro_f1=0.3861 epochs=80 best=0.039754
+[multitask] trial=040/060 score=0.050836 val_rmse=0.042725 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=38 best=0.039754
+[multitask] trial=041/060 score=0.045099 val_rmse=0.043821 val_dir_acc=0.5225 val_macro_f1=0.3690 epochs=18 best=0.039754
+[multitask] trial=042/060 score=0.041126 val_rmse=0.041581 val_dir_acc=0.5650 val_macro_f1=0.3721 epochs=57 best=0.039754
+[multitask] trial=043/060 score=0.044451 val_rmse=0.042583 val_dir_acc=0.4850 val_macro_f1=0.3440 epochs=27 best=0.039754
+[multitask] trial=044/060 score=0.049500 val_rmse=0.042714 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=32 best=0.039754
+[multitask] trial=045/060 score=0.047339 val_rmse=0.042988 val_dir_acc=0.3525 val_macro_f1=0.3213 epochs=22 best=0.039754
+[multitask] trial=046/060 score=0.042932 val_rmse=0.041914 val_dir_acc=0.5175 val_macro_f1=0.3556 epochs=24 best=0.039754
+[multitask] trial=047/060 score=0.041407 val_rmse=0.041255 val_dir_acc=0.5650 val_macro_f1=0.3307 epochs=26 best=0.039754
+[multitask] trial=048/060 score=0.046966 val_rmse=0.043874 val_dir_acc=0.4525 val_macro_f1=0.3330 epochs=34 best=0.039754
+[multitask] trial=049/060 score=0.044255 val_rmse=0.042936 val_dir_acc=0.4825 val_macro_f1=0.4031 epochs=36 best=0.039754
+[multitask] trial=050/060 score=0.047413 val_rmse=0.045717 val_dir_acc=0.5675 val_macro_f1=0.3152 epochs=29 best=0.039754
+[multitask] trial=051/060 score=0.040990 val_rmse=0.041077 val_dir_acc=0.5775 val_macro_f1=0.3144 epochs=34 best=0.039754
+[multitask] trial=052/060 score=0.051478 val_rmse=0.043266 val_dir_acc=0.5000 val_macro_f1=0.2579 epochs=21 best=0.039754
+[multitask] trial=053/060 score=0.041799 val_rmse=0.041822 val_dir_acc=0.5700 val_macro_f1=0.3416 epochs=45 best=0.039754
+[multitask] trial=054/060 score=0.040439 val_rmse=0.040994 val_dir_acc=0.5750 val_macro_f1=0.3535 epochs=45 best=0.039754
+[multitask] trial=055/060 score=0.046855 val_rmse=0.044812 val_dir_acc=0.5600 val_macro_f1=0.3034 epochs=21 best=0.039754
+[multitask] trial=056/060 score=0.043209 val_rmse=0.042398 val_dir_acc=0.5525 val_macro_f1=0.3414 epochs=31 best=0.039754
+[multitask] trial=057/060 score=0.051202 val_rmse=0.042891 val_dir_acc=0.4000 val_macro_f1=0.3370 epochs=46 best=0.039754
+[multitask] trial=058/060 score=0.053918 val_rmse=0.043011 val_dir_acc=0.4425 val_macro_f1=0.3274 epochs=60 best=0.039754
+[multitask] trial=059/060 score=0.051441 val_rmse=0.042808 val_dir_acc=0.4050 val_macro_f1=0.3537 epochs=31 best=0.039754
+[multitask] trial=060/060 score=0.052432 val_rmse=0.041919 val_dir_acc=0.5575 val_macro_f1=0.3520 epochs=45 best=0.039754
+[multitask] best validation config:
+{
+  "sequence_length": 30,
+  "include_current_row": true,
+  "hidden_size": 48,
+  "num_layers": 3,
+  "classifier_hidden": 32,
+  "head_layers": 2,
+  "bidirectional": false,
+  "recurrent_dropout": 0.0,
+  "fc_dropout": 0.0,
+  "activation_name": "tanh",
+  "pooling_name": "last",
+  "use_layer_norm": true,
+  "gru_bias": true,
+  "learning_rate": 0.0001,
+  "weight_decay": 1e-06,
+  "batch_size": 64,
+  "regression_loss_name": "mae",
+  "smooth_l1_beta": 0.1,
+  "direction_loss_weight": 2.0,
+  "class_weight_mode": "none",
+  "optimizer_name": "adamw",
+  "gradient_clip": 0.5,
+  "scale_target": true,
+  "seed": 42,
+  "val_mae": 0.031708940863609314,
+  "val_rmse": 0.04176657806387261,
+  "val_correlation": 0.1857816091616962,
+  "val_prediction_mean": 0.011086951941251755,
+  "val_prediction_std": 0.010245694778859615,
+  "val_threshold_direction_accuracy": 0.505,
+  "val_direction_accuracy": 0.6175,
+  "val_direction_baseline_accuracy": 0.5475,
+  "val_direction_lift": 0.07000000000000006,
+  "val_direction_macro_f1": 0.37981220657277,
+  "val_direction_weighted_f1": 0.5388415492957747,
+  "val_direction_macro_precision": 0.44240313126205594,
+  "val_direction_macro_recall": 0.41167450419137186,
+  "selection_score": 0.03975383831051783,
+  "epochs_ran": 54,
+  "trial": 24,
+  "seconds": 73.873
+}
+[multitask] final test metrics:
+{
+  "mae": 0.04898085072636604,
+  "rmse": 0.0667562656881862,
+  "correlation": -0.01502217895531235,
+  "prediction_mean": 0.012153007090091705,
+  "prediction_std": 0.011857196688652039,
+  "threshold_direction_accuracy": 0.34789915966386553,
+  "direction_accuracy": 0.4218487394957983,
+  "direction_baseline_accuracy": 0.5025210084033613,
+  "direction_lift": -0.08067226890756302,
+  "direction_macro_f1": 0.2542579424932366,
+  "direction_weighted_f1": 0.3231308209558333,
+  "direction_macro_precision": 0.3243347847121432,
+  "direction_macro_recall": 0.3447947057567779,
+  "confusion_matrix": [
+    [
+      37,
+      0,
+      262
+    ],
+    [
+      7,
+      0,
+      54
+    ],
+    [
+      21,
+      0,
+      214
+    ]
+  ]
+}
+[multitask] wrote reports\final\gru_sentiment_only_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_search.csv
+[multitask] wrote reports\final\gru_sentiment_only_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_best.json
+[multitask] wrote reports\final\gru_sentiment_only_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_predictions.csv
+[multitask] wrote model_checkpoints\final\gru_sentiment_only_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_best.pt

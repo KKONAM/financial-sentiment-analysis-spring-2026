@@ -1,4 +1,5 @@
 from pathlib import Path
+import random
 from time import perf_counter
 
 import numpy as np
@@ -18,30 +19,48 @@ from features.build_features import (
 from temporal.gru import HybridGRU
 
 
-SEQUENCE_LENGTH = 15
+SEQUENCE_LENGTH = 20
 TARGET_HORIZON_DAYS = 5
 TARGET_COLUMN = "future_return_5d"
 INCLUDE_CURRENT_ROW = True
 DIRECTION_FLAT_THRESHOLD = 0.005
-TRAIN_END_DATE = "2021-12-31"
-VAL_END_DATE = "2022-06-30"
-EPOCHS = 20
+TRAIN_END_DATE = "2021-04-30"
+VAL_END_DATE = "2021-08-31"
+EPOCHS = 80
 BATCH_SIZE = 16
-LEARNING_RATE = 1e-4
-WEIGHT_DECAY = 1e-4
-HIDDEN_SIZE = 16
-NUM_LAYERS = 3
-CHECKPOINT_PATH = Path(f"model_checkpoints/gru_{TARGET_HORIZON_DAYS}d_return_best.pt")
-PREDICTIONS_PATH = Path(f"reports/gru_{TARGET_HORIZON_DAYS}d_return_predictions.csv")
+LEARNING_RATE = 1e-3
+WEIGHT_DECAY = 1e-6
+HIDDEN_SIZE = 24
+NUM_LAYERS = 4
+CLASSIFIER_HIDDEN = 8
+HEAD_LAYERS = 2
+BIDIRECTIONAL = False
+GRU_DROPOUT = 0.0
+FC_DROPOUT = 0.3
+ACTIVATION_NAME = "tanh"
+POOLING_NAME = "mean"
+USE_LAYER_NORM = True
+GRU_BIAS = True
+LOSS_NAME = "smooth_l1"
+OPTIMIZER_NAME = "adamw"
+SMOOTH_L1_BETA = 0.2
+GRADIENT_CLIP = 0.25
+SCALE_TARGET = True
+EARLY_STOPPING_PATIENCE = 10
+EARLY_STOPPING_MIN_DELTA = 1e-5
+SEED = 101
+CHECKPOINT_PATH = Path(f"model_checkpoints/final/gru_{TARGET_HORIZON_DAYS}d_return_best.pt")
+PREDICTIONS_PATH = Path(f"reports/final/gru_{TARGET_HORIZON_DAYS}d_return_predictions.csv")
 PROGRESS_EVERY_BATCHES = 10
-CACHE_VERSION = "v2_trading_days"
+CACHE_VERSION = "v4_purged_rawtech_labeled_sentiment"
 
 
 def main():
     started_at = perf_counter()
+    set_seed(SEED)
     symbols = ["AAPL", "AMZN", "META", "NVDA", "TSLA"]
     start_date = "2020-01-01"
-    end_date = "2022-12-31"
+    end_date = "2022-02-28"
     combined_features_path = build_combined_features_path(symbols, start_date, end_date, TARGET_HORIZON_DAYS)
 
     log_step("Loading or building combined indicator + sentiment dataframe")
@@ -98,16 +117,21 @@ def main():
         train_cutoff=train_cutoff,
         val_cutoff=val_cutoff,
     )
+    target_mean, target_scale = fit_target_scaler(y=y, train_idx=train_idx)
+    model_y = scale_targets(y=y, target_mean=target_mean, target_scale=target_scale)
 
     log_step(
         "Split sizes: "
         f"train={len(train_idx):,}, validation={len(val_idx):,}, test={len(test_idx):,}"
     )
+    if SCALE_TARGET:
+        log_step(f"Scaling target using train mean={target_mean:.6f}, std={target_scale:.6f}")
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     log_step(f"Using device: {device}")
-    x_train, y_train = to_tensors(X, y, train_idx, device)
-    x_val, y_val = to_tensors(X, y, val_idx, device)
-    x_test, y_test = to_tensors(X, y, test_idx, device)
+    x_train, y_train = to_tensors(X, model_y, train_idx, device)
+    x_val, y_val = to_tensors(X, model_y, val_idx, device)
+    x_test, y_test = to_tensors(X, model_y, test_idx, device)
 
     test_meta = meta.iloc[test_idx].reset_index(drop=True)
 
@@ -119,11 +143,25 @@ def main():
     val_loader = DataLoader(TensorDataset(x_val, y_val), batch_size=BATCH_SIZE, shuffle=False)
     test_loader = DataLoader(TensorDataset(x_test, y_test), batch_size=BATCH_SIZE, shuffle=False)
 
-    model = HybridGRU(input_size=X.shape[2], hidden_size=HIDDEN_SIZE, num_layers=NUM_LAYERS).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
-    loss_fn = nn.SmoothL1Loss()
+    model = HybridGRU(
+        input_size=X.shape[2],
+        hidden_size=HIDDEN_SIZE,
+        num_layers=NUM_LAYERS,
+        classifier_hidden=CLASSIFIER_HIDDEN,
+        head_layers=HEAD_LAYERS,
+        bidirectional=BIDIRECTIONAL,
+        gru_dropout=GRU_DROPOUT,
+        fc_dropout=FC_DROPOUT,
+        activation_name=ACTIVATION_NAME,
+        pooling_name=POOLING_NAME,
+        use_layer_norm=USE_LAYER_NORM,
+        gru_bias=GRU_BIAS,
+    ).to(device)
+    optimizer = build_optimizer(model)
+    loss_fn = build_loss()
 
     best_val_loss = float("inf")
+    epochs_without_improvement = 0
     for epoch in range(1, EPOCHS + 1):
         epoch_start = perf_counter()
         train_loss = train_one_epoch(
@@ -137,7 +175,7 @@ def main():
         val_loss, _, _ = evaluate(model, val_loader, loss_fn)
 
         saved_checkpoint = False
-        if val_loss < best_val_loss:
+        if val_loss < best_val_loss - EARLY_STOPPING_MIN_DELTA:
             best_val_loss = val_loss
             save_checkpoint(
                 model=model,
@@ -151,9 +189,21 @@ def main():
                 target_column=TARGET_COLUMN,
                 target_horizon_days=TARGET_HORIZON_DAYS,
                 hidden_size=HIDDEN_SIZE,
+                classifier_hidden=CLASSIFIER_HIDDEN,
                 include_current_row=INCLUDE_CURRENT_ROW,
+                loss_name=LOSS_NAME,
+                optimizer_name=OPTIMIZER_NAME,
+                smooth_l1_beta=SMOOTH_L1_BETA,
+                gradient_clip=GRADIENT_CLIP,
+                scale_target=SCALE_TARGET,
+                target_mean=target_mean,
+                target_scale=target_scale,
+                seed=SEED,
             )
             saved_checkpoint = True
+            epochs_without_improvement = 0
+        else:
+            epochs_without_improvement += 1
 
         checkpoint_note = " saved_checkpoint" if saved_checkpoint else ""
         print(
@@ -165,12 +215,25 @@ def main():
             flush=True,
         )
 
+        if epochs_without_improvement >= EARLY_STOPPING_PATIENCE:
+            log_step(
+                "Early stopping: "
+                f"validation loss did not improve for {EARLY_STOPPING_PATIENCE} epochs"
+            )
+            break
+
     log_step("Loading best validation checkpoint for final test evaluation")
     checkpoint = torch.load(CHECKPOINT_PATH, map_location=device)
     model.load_state_dict(checkpoint["model_state_dict"])
 
     log_step("Running final test evaluation")
-    test_loss, test_predictions, test_targets = evaluate(model, test_loader, loss_fn)
+    test_loss, scaled_test_predictions, _ = evaluate(model, test_loader, loss_fn)
+    test_predictions = inverse_scale_targets(
+        y=scaled_test_predictions,
+        target_mean=target_mean,
+        target_scale=target_scale,
+    )
+    test_targets = y[test_idx]
     test_mae = mean_absolute_error(test_targets, test_predictions)
     test_rmse = float(np.sqrt(mean_squared_error(test_targets, test_predictions)))
     test_directional_accuracy = directional_accuracy(test_targets, test_predictions)
@@ -268,6 +331,25 @@ def to_tensors(
     return features, targets
 
 
+def fit_target_scaler(y: np.ndarray, train_idx: np.ndarray) -> tuple[float, float]:
+    if not SCALE_TARGET:
+        return 0.0, 1.0
+
+    target_mean = float(np.mean(y[train_idx]))
+    target_scale = float(np.std(y[train_idx]))
+    if np.isclose(target_scale, 0.0):
+        target_scale = 1.0
+    return target_mean, target_scale
+
+
+def scale_targets(y: np.ndarray, target_mean: float, target_scale: float) -> np.ndarray:
+    return ((y - target_mean) / target_scale).astype(np.float32)
+
+
+def inverse_scale_targets(y: np.ndarray, target_mean: float, target_scale: float) -> np.ndarray:
+    return y * target_scale + target_mean
+
+
 def train_one_epoch(
     model: HybridGRU,
     loader: DataLoader,
@@ -284,6 +366,8 @@ def train_one_epoch(
         logits = model(batch_x)
         loss = loss_fn(logits, batch_y)
         loss.backward()
+        if GRADIENT_CLIP is not None:
+            nn.utils.clip_grad_norm_(model.parameters(), GRADIENT_CLIP)
         optimizer.step()
 
         total_loss += loss.item() * len(batch_x)
@@ -298,6 +382,24 @@ def train_one_epoch(
             )
 
     return total_loss / total_rows
+
+
+def build_optimizer(model: nn.Module) -> torch.optim.Optimizer:
+    if OPTIMIZER_NAME == "adam":
+        return torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+    if OPTIMIZER_NAME == "adamw":
+        return torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+    raise ValueError(f"Unsupported optimizer: {OPTIMIZER_NAME}")
+
+
+def build_loss() -> nn.Module:
+    if LOSS_NAME == "smooth_l1":
+        return nn.SmoothL1Loss(beta=SMOOTH_L1_BETA)
+    if LOSS_NAME == "mse":
+        return nn.MSELoss()
+    if LOSS_NAME == "mae":
+        return nn.L1Loss()
+    raise ValueError(f"Unsupported loss: {LOSS_NAME}")
 
 
 def evaluate(
@@ -399,6 +501,14 @@ def safe_correlation(targets: np.ndarray, predictions: np.ndarray) -> float:
     return float(np.corrcoef(targets, predictions)[0, 1])
 
 
+def set_seed(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
 def print_baseline_report(rows: list[dict[str, float | str]]) -> None:
     report = pd.DataFrame(rows)
     print("baseline comparison:")
@@ -417,7 +527,16 @@ def save_checkpoint(
     target_column: str,
     target_horizon_days: int,
     hidden_size: int,
+    classifier_hidden: int,
     include_current_row: bool,
+    loss_name: str,
+    optimizer_name: str,
+    smooth_l1_beta: float,
+    gradient_clip: float | None,
+    scale_target: bool,
+    target_mean: float,
+    target_scale: float,
+    seed: int,
 ) -> None:
     CHECKPOINT_PATH.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -433,8 +552,27 @@ def save_checkpoint(
             "target_horizon_days": target_horizon_days,
             "hidden_size": hidden_size,
             "num_layers": NUM_LAYERS,
+            "classifier_hidden": classifier_hidden,
+            "head_layers": HEAD_LAYERS,
+            "bidirectional": BIDIRECTIONAL,
+            "gru_dropout": GRU_DROPOUT,
+            "fc_dropout": FC_DROPOUT,
+            "activation_name": ACTIVATION_NAME,
+            "pooling_name": POOLING_NAME,
+            "use_layer_norm": USE_LAYER_NORM,
+            "gru_bias": GRU_BIAS,
             "include_current_row": include_current_row,
+            "learning_rate": LEARNING_RATE,
             "weight_decay": WEIGHT_DECAY,
+            "loss_name": loss_name,
+            "smooth_l1_beta": smooth_l1_beta,
+            "optimizer_name": optimizer_name,
+            "gradient_clip": gradient_clip,
+            "scale_target": scale_target,
+            "target_mean": target_mean,
+            "target_scale": target_scale,
+            "early_stopping_patience": EARLY_STOPPING_PATIENCE,
+            "seed": seed,
             "scaler_mean": scaler.mean_.tolist(),
             "scaler_scale": scaler.scale_.tolist(),
             "train_cutoff": train_cutoff.isoformat(),

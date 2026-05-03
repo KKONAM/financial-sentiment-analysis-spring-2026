@@ -13,6 +13,7 @@ SENTIMENT_FEATURES = [
     "sentiment_score",
     "sentiment_confidence",
     "article_count",
+    "message_count",
 ]
 
 
@@ -133,6 +134,7 @@ class FinBertSentimentExtractor:
                 sentiment_score=("sentiment_score", "mean"),
                 sentiment_confidence=("sentiment_confidence", "mean"),
                 article_count=("sentiment_score", "count"),
+                message_count=("sentiment_score", "count"),
             )
             .reset_index()
         )

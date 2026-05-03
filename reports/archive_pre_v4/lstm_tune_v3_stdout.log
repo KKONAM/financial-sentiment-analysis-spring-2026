@@ -1,0 +1,92 @@
+[tune] device=cpu trials=48 max_epochs=60 patience=8
+[tune] trial=001/048 score=0.099818 val_mae=0.065422 val_rmse=0.083433 val_dir=0.3500 epochs=14 best=0.099818
+[tune] trial=002/048 score=0.101842 val_mae=0.067238 val_rmse=0.084995 val_dir=0.2968 epochs=11 best=0.099818
+[tune] trial=003/048 score=0.101007 val_mae=0.066285 val_rmse=0.084340 val_dir=0.2758 epochs=12 best=0.099818
+[tune] trial=004/048 score=0.100283 val_mae=0.065755 val_rmse=0.083844 val_dir=0.3565 epochs=09 best=0.099818
+[tune] trial=005/048 score=0.097627 val_mae=0.063514 val_rmse=0.081749 val_dir=0.2016 epochs=10 best=0.097627
+[tune] trial=006/048 score=0.103155 val_mae=0.068261 val_rmse=0.086090 val_dir=0.3565 epochs=09 best=0.097627
+[tune] trial=007/048 score=0.100779 val_mae=0.066003 val_rmse=0.084024 val_dir=0.3565 epochs=09 best=0.097627
+[tune] trial=008/048 score=0.097630 val_mae=0.063479 val_rmse=0.081723 val_dir=0.1581 epochs=10 best=0.097627
+[tune] trial=009/048 score=0.099674 val_mae=0.065085 val_rmse=0.083403 val_dir=0.3565 epochs=10 best=0.097627
+[tune] trial=010/048 score=0.099699 val_mae=0.065139 val_rmse=0.083244 val_dir=0.3565 epochs=09 best=0.097627
+[tune] trial=011/048 score=0.099953 val_mae=0.065439 val_rmse=0.083593 val_dir=0.3532 epochs=11 best=0.097627
+[tune] trial=012/048 score=0.099492 val_mae=0.065569 val_rmse=0.083100 val_dir=0.3065 epochs=14 best=0.097627
+[tune] trial=013/048 score=0.098870 val_mae=0.064618 val_rmse=0.082716 val_dir=0.1290 epochs=16 best=0.097627
+[tune] trial=014/048 score=0.093952 val_mae=0.060642 val_rmse=0.078791 val_dir=0.4613 epochs=11 best=0.093952
+[tune] trial=015/048 score=0.102157 val_mae=0.067573 val_rmse=0.085207 val_dir=0.3290 epochs=13 best=0.093952
+[tune] trial=016/048 score=0.101775 val_mae=0.066947 val_rmse=0.084976 val_dir=0.2823 epochs=16 best=0.093952
+[tune] trial=017/048 score=0.100147 val_mae=0.065510 val_rmse=0.083576 val_dir=0.3565 epochs=10 best=0.093952
+[tune] trial=018/048 score=0.100523 val_mae=0.066413 val_rmse=0.083920 val_dir=0.3129 epochs=10 best=0.093952
+[tune] trial=019/048 score=0.099392 val_mae=0.065044 val_rmse=0.083120 val_dir=0.3468 epochs=14 best=0.093952
+[tune] trial=020/048 score=0.102617 val_mae=0.067961 val_rmse=0.085627 val_dir=0.3597 epochs=18 best=0.093952
+[tune] trial=021/048 score=0.102412 val_mae=0.067882 val_rmse=0.085442 val_dir=0.3435 epochs=15 best=0.093952
+[tune] trial=022/048 score=0.104277 val_mae=0.068497 val_rmse=0.087101 val_dir=0.3403 epochs=18 best=0.093952
+[tune] trial=023/048 score=0.098634 val_mae=0.064318 val_rmse=0.082453 val_dir=0.3065 epochs=09 best=0.093952
+[tune] trial=024/048 score=0.101706 val_mae=0.066683 val_rmse=0.085018 val_dir=0.3129 epochs=14 best=0.093952
+[tune] trial=025/048 score=0.102046 val_mae=0.067308 val_rmse=0.085219 val_dir=0.3565 epochs=11 best=0.093952
+[tune] trial=026/048 score=0.098072 val_mae=0.063876 val_rmse=0.082103 val_dir=0.2774 epochs=11 best=0.093952
+[tune] trial=027/048 score=0.114098 val_mae=0.076592 val_rmse=0.094950 val_dir=0.3581 epochs=33 best=0.093952
+[tune] trial=028/048 score=0.101007 val_mae=0.066449 val_rmse=0.084395 val_dir=0.3516 epochs=10 best=0.093952
+[tune] trial=029/048 score=0.103895 val_mae=0.068654 val_rmse=0.086729 val_dir=0.3581 epochs=13 best=0.093952
+[tune] trial=030/048 score=0.106800 val_mae=0.071452 val_rmse=0.088937 val_dir=0.3516 epochs=11 best=0.093952
+[tune] trial=031/048 score=0.101333 val_mae=0.066333 val_rmse=0.084750 val_dir=0.4081 epochs=09 best=0.093952
+[tune] trial=032/048 score=0.098422 val_mae=0.064013 val_rmse=0.082413 val_dir=0.2403 epochs=10 best=0.093952
+[tune] trial=033/048 score=0.105845 val_mae=0.070526 val_rmse=0.088214 val_dir=0.3565 epochs=10 best=0.093952
+[tune] trial=034/048 score=0.103793 val_mae=0.068783 val_rmse=0.086463 val_dir=0.2742 epochs=09 best=0.093952
+[tune] trial=035/048 score=0.099461 val_mae=0.064988 val_rmse=0.083113 val_dir=0.3565 epochs=09 best=0.093952
+[tune] trial=036/048 score=0.099098 val_mae=0.064745 val_rmse=0.082912 val_dir=0.3565 epochs=11 best=0.093952
+[tune] trial=037/048 score=0.099550 val_mae=0.065112 val_rmse=0.083213 val_dir=0.3081 epochs=09 best=0.093952
+[tune] trial=038/048 score=0.099456 val_mae=0.064789 val_rmse=0.082931 val_dir=0.3565 epochs=14 best=0.093952
+[tune] trial=039/048 score=0.099166 val_mae=0.064539 val_rmse=0.082917 val_dir=0.2242 epochs=09 best=0.093952
+[tune] trial=040/048 score=0.102114 val_mae=0.067675 val_rmse=0.085195 val_dir=0.3323 epochs=30 best=0.093952
+[tune] trial=041/048 score=0.100726 val_mae=0.066210 val_rmse=0.084174 val_dir=0.3968 epochs=13 best=0.093952
+[tune] trial=042/048 score=0.102375 val_mae=0.067774 val_rmse=0.085345 val_dir=0.3081 epochs=10 best=0.093952
+[tune] trial=043/048 score=0.099667 val_mae=0.065252 val_rmse=0.083354 val_dir=0.3113 epochs=09 best=0.093952
+[tune] trial=044/048 score=0.100519 val_mae=0.066167 val_rmse=0.083975 val_dir=0.3161 epochs=12 best=0.093952
+[tune] trial=045/048 score=0.099832 val_mae=0.065473 val_rmse=0.083463 val_dir=0.3516 epochs=09 best=0.093952
+[tune] trial=046/048 score=0.102671 val_mae=0.067881 val_rmse=0.085700 val_dir=0.3694 epochs=16 best=0.093952
+[tune] trial=047/048 score=0.101130 val_mae=0.066495 val_rmse=0.084506 val_dir=0.3661 epochs=09 best=0.093952
+[tune] trial=048/048 score=0.098143 val_mae=0.064022 val_rmse=0.082102 val_dir=0.1468 epochs=13 best=0.093952
+[tune] best validation config:
+{
+  "sequence_length": 20,
+  "include_current_row": true,
+  "hidden_size": 32,
+  "num_layers": 2,
+  "classifier_hidden": 8,
+  "bidirectional": false,
+  "lstm_dropout": 0.1,
+  "fc_dropout": 0.0,
+  "learning_rate": 0.0001,
+  "weight_decay": 1e-05,
+  "batch_size": 64,
+  "loss_name": "mse",
+  "smooth_l1_beta": 0.05,
+  "optimizer_name": "adamw",
+  "gradient_clip": null,
+  "scale_target": false,
+  "seed": 42,
+  "val_mae": 0.06064220517873764,
+  "val_rmse": 0.07879138992741506,
+  "val_directional_accuracy": 0.4612903225806452,
+  "val_correlation": 0.16213820792082828,
+  "val_prediction_mean": -0.012975583784282207,
+  "val_prediction_std": 0.015911296010017395,
+  "selection_score": 0.09395194122209947,
+  "epochs_ran": 11,
+  "trial": 14,
+  "seconds": 3.762
+}
+[tune] final test metrics:
+{
+  "mae": 0.05965816229581833,
+  "rmse": 0.07853403895602479,
+  "directional_accuracy": 0.3983606557377049,
+  "correlation": -0.1149379944505449,
+  "prediction_mean": -0.012809383682906628,
+  "prediction_std": 0.014846335165202618
+}
+[tune] wrote reports\lstm_hyperparameter_search_v3_labeled_sentiment.csv
+[tune] wrote reports\lstm_best_hyperparameters_v3_labeled_sentiment.json
+[tune] wrote reports\lstm_tuned_5d_return_predictions_v3_labeled_sentiment.csv
+[tune] wrote model_checkpoints\lstm_tuned_5d_return_best_v3_labeled_sentiment.pt
