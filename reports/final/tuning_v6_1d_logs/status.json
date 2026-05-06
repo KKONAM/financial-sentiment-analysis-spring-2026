@@ -1,0 +1,34 @@
+{
+  "transformer_technical_only": {
+    "status": "completed",
+    "command": [
+      ".venv\\Scripts\\python.exe",
+      "src/tune_feature_subset.py",
+      "--model",
+      "transformer",
+      "--feature-group",
+      "technical_only",
+      "--trials",
+      "60",
+      "--torch-threads",
+      "2",
+      "--data-path",
+      "data\\processed\\combined_features_AAPL_AMZN_META_NVDA_TSLA_2020-01-01_to_2022-02-28_1d_target_v6_purged_warmtech_finetuned_finbert_sentiment.csv",
+      "--target-horizon-days",
+      "1",
+      "--output-suffix",
+      "2020-01-01_to_2022-02-28_v6_1d_purged_warmtech_finetuned_finbert_sentiment_sidequest"
+    ],
+    "expected_report": "reports\\final\\transformer_technical_only_tuned_2020-01-01_to_2022-02-28_v6_1d_purged_warmtech_finetuned_finbert_sentiment_sidequest_best.json",
+    "expected_checkpoint": "model_checkpoints\\final\\transformer_technical_only_tuned_2020-01-01_to_2022-02-28_v6_1d_purged_warmtech_finetuned_finbert_sentiment_sidequest_best.pt",
+    "stdout": "reports\\final\\tuning_v6_1d_logs\\transformer_technical_only.stdout.log",
+    "stderr": "reports\\final\\tuning_v6_1d_logs\\transformer_technical_only.stderr.log",
+    "pid": 37508,
+    "started_at": "2026-05-04 15:55:54",
+    "return_code": 0,
+    "elapsed_seconds": 2640.216,
+    "finished_at": "2026-05-04 16:39:55",
+    "report_exists": true,
+    "checkpoint_exists": true
+  }
+}

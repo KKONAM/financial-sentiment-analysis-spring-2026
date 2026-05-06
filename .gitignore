@@ -13,3 +13,8 @@ data/
 artifacts/
 *.pyc
 *.csv
+*.csv.gz
+*.safetensors
+*.pt
+*.md
+*.MD

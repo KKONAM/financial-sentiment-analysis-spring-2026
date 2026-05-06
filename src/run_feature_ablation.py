@@ -34,10 +34,11 @@ TARGET_HORIZON_DAYS = 5
 TARGET_COLUMN = "future_return_5d"
 TRAIN_END_DATE = "2021-04-30"
 VAL_END_DATE = "2021-08-31"
-EXPERIMENT_SLUG = "2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment"
+EXPERIMENT_SLUG = "2020-01-01_to_2022-02-28_v5_purged_warmtech_finbert_sentiment"
+DAILY_SENTIMENT_PATH = Path("data/processed/stocktwits_finbert_daily_sentiment.csv")
 DATA_PATH = Path(
     f"data/processed/combined_features_AAPL_AMZN_META_NVDA_TSLA_{START_DATE}_to_{END_DATE}_"
-    f"{TARGET_HORIZON_DAYS}d_target_v4_purged_rawtech_labeled_sentiment.csv"
+    f"{TARGET_HORIZON_DAYS}d_target_v5_purged_warmtech_finbert_sentiment.csv"
 )
 SUMMARY_PATH = Path(f"reports/final/feature_ablation_{EXPERIMENT_SLUG}.json")
 
@@ -120,6 +121,7 @@ def load_frame() -> pd.DataFrame:
             symbols=SYMBOLS,
             start_date=START_DATE,
             end_date=END_DATE,
+            daily_sentiment_csv_path=DAILY_SENTIMENT_PATH,
             train_end=TRAIN_END_DATE,
             forecast_horizon=TARGET_HORIZON_DAYS,
             text_column="title",

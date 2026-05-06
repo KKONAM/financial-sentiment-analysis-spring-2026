@@ -23,6 +23,9 @@ EXPERIMENTS = [
     ("GRU", "combined", "gru_combined"),
     ("GRU", "technical_only", "gru_technical_only"),
     ("GRU", "sentiment_only", "gru_sentiment_only"),
+    ("Transformer", "combined", "transformer_combined"),
+    ("Transformer", "technical_only", "transformer_technical_only"),
+    ("Transformer", "sentiment_only", "transformer_sentiment_only"),
 ]
 
 FIELDNAMES = [

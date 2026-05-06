@@ -9,12 +9,15 @@ from .multitask import (
     multitask_loss,
     returns_to_direction_classes,
 )
+from .transformer import HybridTransformer, HybridTransformerMultitask
 
 __all__ = [
     "HybridGRU",
     "HybridGRUMultitask",
     "HybridLSTM",
     "HybridLSTMMultitask",
+    "HybridTransformer",
+    "HybridTransformerMultitask",
     "MultitaskLossResult",
     "MultitaskOutput",
     "inverse_direction_classes",

@@ -215,6 +215,8 @@ def combine_indicators_and_sentiment(
     end_date: str,
     news_df: pd.DataFrame | None = None,
     news_csv_path: str | Path | None = None,
+    daily_sentiment_df: pd.DataFrame | None = None,
+    daily_sentiment_csv_path: str | Path | None = None,
     train_end: str = "2021-04-30",
     forecast_horizon: int = 1,
     text_column: str = "title",
@@ -236,6 +238,8 @@ def combine_indicators_and_sentiment(
         end_date=end_date,
         news_df=news_df,
         news_csv_path=news_csv_path,
+        daily_sentiment_df=daily_sentiment_df,
+        daily_sentiment_csv_path=daily_sentiment_csv_path,
         text_column=text_column,
         news_date_column=news_date_column,
         news_ticker_column=news_ticker_column,
@@ -278,10 +282,32 @@ def _build_sentiment_for_merge(
     end_date: str,
     news_df: pd.DataFrame | None,
     news_csv_path: str | Path | None,
+    daily_sentiment_df: pd.DataFrame | None,
+    daily_sentiment_csv_path: str | Path | None,
     text_column: str,
     news_date_column: str,
     news_ticker_column: str,
 ) -> pd.DataFrame:
+    if daily_sentiment_df is not None and daily_sentiment_csv_path is not None:
+        raise ValueError("Pass either daily_sentiment_df or daily_sentiment_csv_path, not both.")
+
+    if daily_sentiment_df is not None:
+        return _prepare_daily_sentiment_for_merge(
+            daily_sentiment_df,
+            symbols=symbols,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+    if daily_sentiment_csv_path is not None:
+        daily_sentiment = pd.read_csv(daily_sentiment_csv_path, low_memory=False)
+        return _prepare_daily_sentiment_for_merge(
+            daily_sentiment,
+            symbols=symbols,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
     csv_text_column, csv_date_column = _resolve_csv_column_overrides(
         text_column=text_column,
         news_date_column=news_date_column,
@@ -317,6 +343,31 @@ def _build_sentiment_for_merge(
         date_column=news_date_column,
         ticker_column=news_ticker_column,
     )
+
+
+def _prepare_daily_sentiment_for_merge(
+    daily_sentiment: pd.DataFrame,
+    symbols: list[str],
+    start_date: str,
+    end_date: str,
+) -> pd.DataFrame:
+    frame = _normalize_sentiment_dates(daily_sentiment)
+    required_columns = ["ticker", "Date", *SENTIMENT_FEATURES]
+    missing_columns = [column for column in required_columns if column not in frame.columns]
+    if missing_columns:
+        raise ValueError(f"Daily sentiment data is missing required columns: {missing_columns}")
+
+    normalized_symbols = {symbol.upper() for symbol in symbols}
+    frame = frame.copy()
+    frame["ticker"] = frame["ticker"].astype(str).str.upper()
+    frame = frame[frame["ticker"].isin(normalized_symbols)]
+    frame = filter_frame_by_date_range(
+        frame,
+        date_column="Date",
+        start_date=start_date,
+        end_date=end_date,
+    )
+    return frame[required_columns].sort_values(["ticker", "Date"]).reset_index(drop=True)
 
 
 def _is_stocktwits_raw_frame(frame: pd.DataFrame) -> bool:

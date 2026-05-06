@@ -4,7 +4,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 MARKET_FEATURES = ["returns", "rsi", "macd", "bbp", "momentum", "volume"]
+INDICATOR_WARMUP_DAYS = 120
 
 
 def build_market_indicators(
@@ -18,11 +20,16 @@ def build_market_indicators(
     if not symbols:
         raise ValueError("At least one symbol is required.")
 
-    dates = _build_business_date_range(start_date=start_date, end_date=end_date)
+    output_dates = _build_business_date_range(start_date=start_date, end_date=end_date)
+    indicator_dates = _build_indicator_date_range(
+        start_date=start_date,
+        end_date=end_date,
+        warmup_days=INDICATOR_WARMUP_DAYS,
+    )
     frames = [
         _build_symbol_indicator_frame(
             symbol=symbol,
-            dates=dates,
+            dates=indicator_dates,
             forecast_horizon=forecast_horizon,
         )
         for symbol in symbols
@@ -30,6 +37,9 @@ def build_market_indicators(
     full_frame = pd.concat(frames, ignore_index=True)
 
     full_frame["Date"] = pd.to_datetime(full_frame["Date"])
+    full_frame = full_frame[
+        (full_frame["Date"] >= output_dates.min()) & (full_frame["Date"] <= output_dates.max())
+    ]
     full_frame = full_frame.dropna(subset=MARKET_FEATURES + ["future_return", "label", "future_return_5d"])
 
     return full_frame.sort_values(["ticker", "Date"]).reset_index(drop=True)
@@ -46,12 +56,14 @@ def build_price_feature_frame(price_frame: pd.DataFrame, forecast_horizon: int =
     prices = prices.sort_values("date").reset_index(drop=True)
     prices["Date"] = pd.to_datetime(prices["date"]).dt.normalize()
 
-    close = prices["close"].ffill().bfill()
+    close = prices["close"].ffill()
+    volume = prices["volume"].ffill()
     prices["returns"] = close.pct_change()
     prices["rsi"] = compute_rsi(close)
     prices["macd"] = compute_macd_signal(close)
     prices["bbp"] = compute_bollinger_band_percent(close)
     prices["momentum"] = close / close.shift(14) - 1.0
+    prices["volume"] = volume
 
     prices["future_return"] = close.shift(-forecast_horizon) / close - 1.0
     prices["label"] = (prices["future_return"] > 0).astype(int)
@@ -95,7 +107,7 @@ def load_local_price_data(symbol: str, dates: pd.DatetimeIndex) -> pd.DataFrame:
             f"{dates.min().date()} and {dates.max().date()}."
         )
     price_frame.index.name = "Date"
-    return price_frame.ffill().bfill()
+    return price_frame.ffill()
 
 
 def _download_local_price_data(
@@ -131,6 +143,8 @@ def _download_local_price_data(
 
     price_frame = price_frame.reset_index()
     output_path = data_dir / f"{symbol.lower()}_us_d.csv"
+    if "Adj Close" in price_frame.columns:
+        price_frame["Close"] = price_frame["Adj Close"]
     price_frame[["Date", "Open", "High", "Low", "Close", "Volume"]].to_csv(output_path, index=False)
     return output_path
 
@@ -139,8 +153,8 @@ def compute_rsi(close_series: pd.Series, window: int = 14) -> pd.Series:
     delta = close_series.diff()
     gains = delta.clip(lower=0.0)
     losses = -delta.clip(upper=0.0)
-    avg_gain = gains.rolling(window=window, min_periods=window).mean()
-    avg_loss = losses.rolling(window=window, min_periods=window).mean()
+    avg_gain = gains.ewm(alpha=1.0 / window, adjust=False, min_periods=window).mean()
+    avg_loss = losses.ewm(alpha=1.0 / window, adjust=False, min_periods=window).mean()
     relative_strength = avg_gain / avg_loss.replace(0.0, np.nan)
     rsi = 100.0 - (100.0 / (1.0 + relative_strength))
     rsi = rsi.mask((avg_loss == 0.0) & (avg_gain > 0.0), 100.0)
@@ -150,11 +164,14 @@ def compute_rsi(close_series: pd.Series, window: int = 14) -> pd.Series:
 
 
 def compute_macd_signal(close_series: pd.Series, window: int = 14) -> pd.Series:
-    macd = close_series.ewm(span=12, adjust=False).mean() - close_series.ewm(span=26, adjust=False).mean()
-    signal = macd.ewm(span=9, adjust=False).mean()
-    macd_norm = (macd - macd.rolling(window).mean()) / macd.rolling(window).std()
-    signal_norm = (signal - signal.rolling(window).mean()) / signal.rolling(window).std()
-    return macd_norm - signal_norm
+    macd = close_series.ewm(span=12, adjust=False, min_periods=12).mean() - close_series.ewm(
+        span=26,
+        adjust=False,
+        min_periods=26,
+    ).mean()
+    signal = macd.ewm(span=9, adjust=False, min_periods=9).mean()
+    histogram = macd - signal
+    return histogram / close_series.replace(0.0, np.nan)
 
 
 def compute_bollinger_band_percent(close_series: pd.Series, window: int = 14) -> pd.Series:
@@ -177,6 +194,12 @@ def _build_business_date_range(start_date: str, end_date: str) -> pd.DatetimeInd
     return dates
 
 
+def _build_indicator_date_range(start_date: str, end_date: str, warmup_days: int) -> pd.DatetimeIndex:
+    start_ts = pd.to_datetime(start_date).normalize() - pd.tseries.offsets.BDay(warmup_days)
+    end_ts = pd.to_datetime(end_date).normalize()
+    return _build_business_date_range(start_date=start_ts.strftime("%Y-%m-%d"), end_date=end_ts.strftime("%Y-%m-%d"))
+
+
 def _build_symbol_indicator_frame(
     symbol: str,
     dates: pd.DatetimeIndex,
@@ -184,8 +207,8 @@ def _build_symbol_indicator_frame(
 ) -> pd.DataFrame:
     price_frame = load_local_price_data(symbol=symbol, dates=dates)
     trading_dates = price_frame.index
-    close = price_frame["Close"].ffill().bfill()
-    volume = price_frame["Volume"].ffill().bfill()
+    close = price_frame["Close"].ffill()
+    volume = price_frame["Volume"].ffill()
 
     frame = pd.DataFrame(
         {
@@ -199,7 +222,7 @@ def _build_symbol_indicator_frame(
             "volume": volume.to_numpy(),
         }
     )
-    frame["future_return"] = close.shift(-1).to_numpy() / close.to_numpy() - 1.0
+    frame["future_return"] = close.shift(-forecast_horizon).to_numpy() / close.to_numpy() - 1.0
     frame["future_return_5d"] = close.shift(-forecast_horizon).to_numpy() / close.to_numpy() - 1.0
     frame["label"] = (frame["future_return"] > 0).astype(int)
     frame["target_direction"] = frame["label"]

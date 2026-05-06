@@ -52,7 +52,8 @@ SEED = 101
 CHECKPOINT_PATH = Path(f"model_checkpoints/final/gru_{TARGET_HORIZON_DAYS}d_return_best.pt")
 PREDICTIONS_PATH = Path(f"reports/final/gru_{TARGET_HORIZON_DAYS}d_return_predictions.csv")
 PROGRESS_EVERY_BATCHES = 10
-CACHE_VERSION = "v4_purged_rawtech_labeled_sentiment"
+CACHE_VERSION = "v5_purged_warmtech_finbert_sentiment"
+DAILY_SENTIMENT_PATH = Path("data/processed/stocktwits_finbert_daily_sentiment.csv")
 
 
 def main():
@@ -73,6 +74,7 @@ def main():
             symbols=symbols,
             start_date=start_date,
             end_date=end_date,
+            daily_sentiment_csv_path=DAILY_SENTIMENT_PATH,
             train_end=TRAIN_END_DATE,
             forecast_horizon=TARGET_HORIZON_DAYS,
             text_column="title",

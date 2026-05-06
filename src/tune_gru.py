@@ -13,6 +13,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
+import tune_lstm
 from tune_lstm import (
     DATA_PATH,
     DEFAULT_TRIALS,
@@ -118,6 +119,7 @@ class TunableGRU(nn.Module):
 
 def main() -> None:
     args = parse_args()
+    tune_lstm.TARGET_HORIZON_DAYS = args.target_horizon_days
     torch.set_num_threads(max(1, min(args.torch_threads, torch.get_num_threads())))
     device = torch.device("cuda" if torch.cuda.is_available() and not args.cpu else "cpu")
 
@@ -253,6 +255,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-delta", type=float, default=1e-5)
     parser.add_argument("--search-seed", type=int, default=2026)
     parser.add_argument("--training-seed", type=int, default=DEFAULT_TRAINING_SEED)
+    parser.add_argument("--target-horizon-days", type=int, default=tune_lstm.TARGET_HORIZON_DAYS)
     parser.add_argument("--torch-threads", type=int, default=4)
     parser.add_argument("--cpu", action="store_true")
     parser.add_argument("--search-results-path", type=Path, default=SEARCH_RESULTS_PATH)
@@ -617,8 +620,8 @@ def evaluate_test_best(
 
     meta = artifacts["meta"].iloc[artifacts["test_idx"]].reset_index(drop=True)
     prediction_frame = meta.copy()
-    prediction_frame["actual_5d_return"] = raw_targets
-    prediction_frame["predicted_5d_return"] = predicted
+    prediction_frame[f"actual_{tune_lstm.TARGET_HORIZON_DAYS}d_return"] = raw_targets
+    prediction_frame[f"predicted_{tune_lstm.TARGET_HORIZON_DAYS}d_return"] = predicted
     prediction_frame["actual_direction"] = return_direction(raw_targets)
     prediction_frame["predicted_direction"] = return_direction(predicted)
     prediction_frame["absolute_error"] = np.abs(raw_targets - predicted)

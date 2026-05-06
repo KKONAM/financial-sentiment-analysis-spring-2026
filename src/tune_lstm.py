@@ -42,13 +42,14 @@ TARGET_HORIZON_DAYS = 5
 TRAIN_END_DATE = "2021-04-30"
 VAL_END_DATE = "2021-08-31"
 DIRECTION_FLAT_THRESHOLD = 0.005
-EXPERIMENT_SLUG = "2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment"
+EXPERIMENT_SLUG = "2020-01-01_to_2022-02-28_v6_purged_warmtech_finetuned_finbert_sentiment"
 FINAL_REPORT_DIR = Path("reports/final")
 FINAL_CHECKPOINT_DIR = Path("model_checkpoints/final")
+DAILY_SENTIMENT_PATH = Path("data/processed/stocktwits_finetuned_finbert_daily_sentiment.csv")
 DATA_PATH = Path(
     "data/processed/"
     f"combined_features_AAPL_AMZN_META_NVDA_TSLA_2020-01-01_to_2022-02-28_5d_target_"
-    "v4_purged_rawtech_labeled_sentiment.csv"
+    "v6_purged_warmtech_finetuned_finbert_sentiment.csv"
 )
 SEARCH_RESULTS_PATH = FINAL_REPORT_DIR / f"lstm_combined_tuned_{EXPERIMENT_SLUG}_search.csv"
 BEST_CONFIG_PATH = FINAL_REPORT_DIR / f"lstm_combined_tuned_{EXPERIMENT_SLUG}_best.json"
@@ -169,7 +170,9 @@ def pool_sequence(output: torch.Tensor, pooling_name: str) -> torch.Tensor:
 
 
 def main() -> None:
+    global TARGET_HORIZON_DAYS
     args = parse_args()
+    TARGET_HORIZON_DAYS = args.target_horizon_days
     torch.set_num_threads(max(1, min(args.torch_threads, torch.get_num_threads())))
     device = torch.device("cuda" if torch.cuda.is_available() and not args.cpu else "cpu")
 
@@ -305,6 +308,7 @@ def load_frame(data_path: Path) -> pd.DataFrame:
         symbols=SYMBOLS,
         start_date=START_DATE,
         end_date=END_DATE,
+        daily_sentiment_csv_path=DAILY_SENTIMENT_PATH,
         train_end=TRAIN_END_DATE,
         forecast_horizon=TARGET_HORIZON_DAYS,
         text_column="title",
@@ -324,6 +328,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-delta", type=float, default=1e-5)
     parser.add_argument("--search-seed", type=int, default=2026)
     parser.add_argument("--training-seed", type=int, default=DEFAULT_TRAINING_SEED)
+    parser.add_argument("--target-horizon-days", type=int, default=TARGET_HORIZON_DAYS)
     parser.add_argument("--torch-threads", type=int, default=4)
     parser.add_argument("--cpu", action="store_true")
     parser.add_argument("--search-results-path", type=Path, default=SEARCH_RESULTS_PATH)
@@ -778,8 +783,8 @@ def evaluate_test_best(
 
     meta = artifacts["meta"].iloc[artifacts["test_idx"]].reset_index(drop=True)
     prediction_frame = meta.copy()
-    prediction_frame["actual_5d_return"] = raw_targets
-    prediction_frame["predicted_5d_return"] = predicted
+    prediction_frame[f"actual_{TARGET_HORIZON_DAYS}d_return"] = raw_targets
+    prediction_frame[f"predicted_{TARGET_HORIZON_DAYS}d_return"] = predicted
     prediction_frame["actual_direction"] = return_direction(raw_targets)
     prediction_frame["predicted_direction"] = return_direction(predicted)
     prediction_frame["absolute_error"] = np.abs(raw_targets - predicted)

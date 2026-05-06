@@ -17,6 +17,7 @@ from torch.utils.data import DataLoader, TensorDataset
 
 import tune_gru
 import tune_lstm
+import tune_transformer
 from features.build_features import MARKET_FEATURES, SENTIMENT_FEATURES, combine_indicators_and_sentiment
 
 
@@ -38,7 +39,10 @@ FEATURE_GROUPS = {
 
 
 def main() -> None:
+    global TARGET_HORIZON_DAYS
     args = parse_args()
+    TARGET_HORIZON_DAYS = args.target_horizon_days
+    tune_lstm.TARGET_HORIZON_DAYS = args.target_horizon_days
     model_module = model_module_for(args.model)
     feature_columns = FEATURE_GROUPS[args.feature_group]
     torch.set_num_threads(max(1, min(args.torch_threads, torch.get_num_threads())))
@@ -184,8 +188,8 @@ def main() -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Tune LSTM/GRU on a single feature subset.")
-    parser.add_argument("--model", choices=["lstm", "gru"], required=True)
+    parser = argparse.ArgumentParser(description="Tune a sequence model on a single feature subset.")
+    parser.add_argument("--model", choices=["lstm", "gru", "transformer"], required=True)
     parser.add_argument("--feature-group", choices=sorted(FEATURE_GROUPS), required=True)
     parser.add_argument("--data-path", type=Path, default=DATA_PATH)
     parser.add_argument("--trials", type=int, default=tune_lstm.DEFAULT_TRIALS)
@@ -194,6 +198,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-delta", type=float, default=1e-5)
     parser.add_argument("--search-seed", type=int, default=2026)
     parser.add_argument("--training-seed", type=int, default=tune_lstm.DEFAULT_TRAINING_SEED)
+    parser.add_argument("--target-horizon-days", type=int, default=TARGET_HORIZON_DAYS)
     parser.add_argument("--torch-threads", type=int, default=4)
     parser.add_argument("--cpu", action="store_true")
     parser.add_argument("--output-suffix", default=EXPERIMENT_SLUG)
@@ -210,6 +215,8 @@ def model_module_for(model_name: str):
         return tune_lstm
     if model_name == "gru":
         return tune_gru
+    if model_name == "transformer":
+        return tune_transformer
     raise ValueError(f"Unsupported model: {model_name}")
 
 
@@ -232,6 +239,7 @@ def load_frame(path: Path) -> pd.DataFrame:
         symbols=SYMBOLS,
         start_date=START_DATE,
         end_date=END_DATE,
+        daily_sentiment_csv_path=tune_lstm.DAILY_SENTIMENT_PATH,
         train_end=TRAIN_END_DATE,
         forecast_horizon=TARGET_HORIZON_DAYS,
         text_column="title",
@@ -488,8 +496,8 @@ def evaluate_test_best(
 
     meta = artifacts["meta"].iloc[artifacts["test_idx"]].reset_index(drop=True)
     prediction_frame = meta.copy()
-    prediction_frame["actual_5d_return"] = raw_targets
-    prediction_frame["predicted_5d_return"] = predicted
+    prediction_frame[f"actual_{TARGET_HORIZON_DAYS}d_return"] = raw_targets
+    prediction_frame[f"predicted_{TARGET_HORIZON_DAYS}d_return"] = predicted
     prediction_frame["actual_direction"] = return_direction(raw_targets)
     prediction_frame["predicted_direction"] = return_direction(predicted)
     prediction_frame["absolute_error"] = np.abs(raw_targets - predicted)

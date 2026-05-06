@@ -438,6 +438,7 @@ def load_frame(path: Path) -> pd.DataFrame:
         symbols=SYMBOLS,
         start_date=START_DATE,
         end_date=END_DATE,
+        daily_sentiment_csv_path=tune_lstm.DAILY_SENTIMENT_PATH,
         train_end=TRAIN_END_DATE,
         forecast_horizon=TARGET_HORIZON_DAYS,
         text_column="title",

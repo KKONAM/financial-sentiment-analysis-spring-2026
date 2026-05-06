@@ -7,10 +7,12 @@ import csv
 from pathlib import Path
 
 
-EXPERIMENT_SLUG = "2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment"
+EXPERIMENT_SLUG = "2020-01-01_to_2022-02-28_v5_purged_warmtech_finbert_sentiment"
 DEFAULT_INPUT = Path(f"reports/final/feature_subset_tuning_comparison_{EXPERIMENT_SLUG}.csv")
 DEFAULT_OUTPUT_DIR = Path("figures")
 
+MODEL_ORDER = ["LSTM", "GRU", "Transformer"]
+FEATURE_ORDER = ["combined", "technical_only", "sentiment_only"]
 FEATURE_LABELS = {
     "combined": "Combined",
     "technical_only": "Technical only",
@@ -21,6 +23,12 @@ FEATURE_COLORS = {
     "combined": "#4169a8",
     "technical_only": "#459b6b",
     "sentiment_only": "#db6b2d",
+}
+
+MODEL_COLORS = {
+    "LSTM": "#4169a8",
+    "GRU": "#459b6b",
+    "Transformer": "#7a5aa6",
 }
 
 
@@ -57,7 +65,21 @@ def read_results(path: Path) -> list[dict[str, str | float]]:
 
 
 def bar_colors(rows: list[dict[str, str | float]]) -> list[str]:
-    return [FEATURE_COLORS[str(row["feature_family"])] for row in rows]
+    return [
+        MODEL_COLORS.get(str(row["model"]), FEATURE_COLORS[str(row["feature_family"])])
+        for row in rows
+    ]
+
+
+def metric_matrix(rows: list[dict[str, str | float]], metric: str) -> list[list[float]]:
+    values = {
+        (str(row["model"]), str(row["feature_family"])): float(row[metric])
+        for row in rows
+    }
+    return [
+        [values[(model, feature)] for feature in FEATURE_ORDER]
+        for model in MODEL_ORDER
+    ]
 
 
 def format_axes(ax, title: str, ylabel: str) -> None:
@@ -95,8 +117,8 @@ def save_error_figure(rows: list[dict[str, str | float]], output_dir: Path) -> P
     labels = [str(row["plot_label"]) for row in rows]
     colors = bar_colors(rows)
 
-    fig, axes = plt.subplots(1, 2, figsize=(11, 5), constrained_layout=True)
-    fig.suptitle("Feature Subset Error Metrics", fontsize=14, fontweight="bold")
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 5), constrained_layout=True)
+    fig.suptitle("Return-Only Error Metrics", fontsize=14, fontweight="bold")
 
     for ax, metric, title in zip(
         axes,
@@ -108,7 +130,7 @@ def save_error_figure(rows: list[dict[str, str | float]], output_dir: Path) -> P
         ax.set_ylim(0.0, 0.08)
         format_axes(ax, title, "Error")
         add_value_labels(ax, bars)
-        ax.tick_params(axis="x", labelsize=8)
+        ax.tick_params(axis="x", labelsize=7)
 
     output_path = output_dir / "feature_subset_error_metrics.pdf"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -122,8 +144,8 @@ def save_signal_figure(rows: list[dict[str, str | float]], output_dir: Path) -> 
     labels = [str(row["plot_label"]) for row in rows]
     colors = bar_colors(rows)
 
-    fig, axes = plt.subplots(1, 2, figsize=(11, 5), constrained_layout=True)
-    fig.suptitle("Feature Subset Signal Metrics", fontsize=14, fontweight="bold")
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 5), constrained_layout=True)
+    fig.suptitle("Return-Only Signal Metrics", fontsize=14, fontweight="bold")
 
     direction_values = [float(row["test_directional_accuracy"]) for row in rows]
     direction_bars = axes[0].bar(labels, direction_values, color=colors)
@@ -142,14 +164,66 @@ def save_signal_figure(rows: list[dict[str, str | float]], output_dir: Path) -> 
     correlation_values = [float(row["test_correlation"]) for row in rows]
     correlation_bars = axes[1].bar(labels, correlation_values, color=colors)
     axes[1].axhline(0.0, color="#555555", linewidth=0.9)
-    axes[1].set_ylim(-0.10, 0.10)
+    axes[1].set_ylim(-0.20, 0.10)
     format_axes(axes[1], "Test Return Correlation", "Pearson correlation")
     add_value_labels(axes[1], correlation_bars)
 
     for ax in axes:
-        ax.tick_params(axis="x", labelsize=8)
+        ax.tick_params(axis="x", labelsize=7)
 
     output_path = output_dir / "feature_subset_signal_metrics.pdf"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, bbox_inches="tight")
+    plt.close(fig)
+    return output_path
+
+
+def save_heatmap_figure(
+    rows: list[dict[str, str | float]],
+    output_dir: Path,
+    specs: list[tuple[str, str, str, str, bool]],
+    title: str,
+    output_name: str,
+) -> Path:
+    plt = require_matplotlib()
+    fig, axes = plt.subplots(1, len(specs), figsize=(10.6, 4.1), constrained_layout=True)
+    if len(specs) == 1:
+        axes = [axes]
+    fig.suptitle(title, fontsize=14, fontweight="bold")
+
+    for ax, (metric, metric_title, fmt, cmap, higher_is_better) in zip(axes, specs):
+        matrix = metric_matrix(rows, metric)
+        flat_values = [value for row in matrix for value in row]
+        best_value = max(flat_values) if higher_is_better else min(flat_values)
+        image = ax.imshow(matrix, cmap=cmap, aspect="auto")
+        ax.set_title(metric_title, fontsize=11, pad=10)
+        ax.set_xticks(range(len(FEATURE_ORDER)), [FEATURE_LABELS[feature] for feature in FEATURE_ORDER])
+        ax.set_yticks(range(len(MODEL_ORDER)), MODEL_ORDER)
+        ax.tick_params(axis="x", labelrotation=25, labelsize=8)
+        ax.tick_params(axis="y", labelsize=9)
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        threshold = (max(flat_values) + min(flat_values)) / 2.0
+        for row_idx, model_row in enumerate(matrix):
+            for col_idx, value in enumerate(model_row):
+                marker = "*" if abs(value - best_value) < 1e-12 else ""
+                color = "white" if value < threshold and not higher_is_better else "black"
+                if higher_is_better:
+                    color = "white" if value > threshold else "black"
+                ax.text(
+                    col_idx,
+                    row_idx,
+                    f"{fmt.format(value)}{marker}",
+                    ha="center",
+                    va="center",
+                    fontsize=9,
+                    fontweight="bold" if marker else "normal",
+                    color=color,
+                )
+        fig.colorbar(image, ax=ax, shrink=0.82)
+
+    output_path = output_dir / output_name
     output_dir.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, bbox_inches="tight")
     plt.close(fig)
@@ -168,8 +242,30 @@ def main() -> None:
     rows = read_results(args.input)
     error_path = save_error_figure(rows, args.output_dir)
     signal_path = save_signal_figure(rows, args.output_dir)
+    error_heatmap_path = save_heatmap_figure(
+        rows=rows,
+        output_dir=args.output_dir,
+        specs=[
+            ("test_mae", "Test MAE", "{:.4f}", "YlGnBu_r", False),
+            ("test_rmse", "Test RMSE", "{:.4f}", "YlGnBu_r", False),
+        ],
+        title="Return-Only Error by Architecture and Feature Set",
+        output_name="return_only_error_heatmap.pdf",
+    )
+    signal_heatmap_path = save_heatmap_figure(
+        rows=rows,
+        output_dir=args.output_dir,
+        specs=[
+            ("test_directional_accuracy", "Test Directional Accuracy", "{:.4f}", "YlGnBu", True),
+            ("test_correlation", "Test Return Correlation", "{:.4f}", "coolwarm", True),
+        ],
+        title="Return-Only Signal Metrics by Architecture and Feature Set",
+        output_name="return_only_signal_heatmap.pdf",
+    )
     print(f"Wrote {error_path}")
     print(f"Wrote {signal_path}")
+    print(f"Wrote {error_heatmap_path}")
+    print(f"Wrote {signal_heatmap_path}")
 
 
 if __name__ == "__main__":
