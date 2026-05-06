@@ -1,0 +1,183 @@
+{
+  "experiment": "2020-01-01_to_2022-02-28_v3_labeled_sentiment",
+  "data_path": "data\\processed\\combined_features_AAPL_AMZN_META_NVDA_TSLA_2020-01-01_to_2022-02-28_5d_target_v3_labeled_sentiment.csv",
+  "train_end_date": "2021-04-30",
+  "val_end_date": "2021-08-31",
+  "results": [
+    {
+      "model": "lstm",
+      "feature_group": "technical_only",
+      "feature_columns": [
+        "returns",
+        "rsi",
+        "macd",
+        "bbp",
+        "momentum",
+        "volume"
+      ],
+      "sequence_length": 30,
+      "include_current_row": true,
+      "split_sizes": {
+        "train": 1460,
+        "validation": 425,
+        "test": 595
+      },
+      "best_validation": {
+        "mae": 0.03122156485915184,
+        "rmse": 0.041604874315654364,
+        "directional_accuracy": 0.4470588235294118,
+        "correlation": 0.2345278014305902,
+        "prediction_mean": 0.002711937762796879,
+        "prediction_std": 0.014470973052084446,
+        "loss": 0.42142960835905635,
+        "selection_score": 0.049410265530442324,
+        "epoch": 7
+      },
+      "test_metrics": {
+        "mae": 0.04979114234447479,
+        "rmse": 0.06822309192460477,
+        "directional_accuracy": 0.3243697478991597,
+        "correlation": -0.12358300130739232,
+        "prediction_mean": 0.004569576121866703,
+        "prediction_std": 0.016401022672653198,
+        "loss": 0.6720822961390519
+      },
+      "paths": {
+        "predictions": "reports\\lstm_technical_only_ablation_predictions_2020-01-01_to_2022-02-28_v3_labeled_sentiment.csv",
+        "checkpoint": "model_checkpoints\\lstm_technical_only_ablation_best_2020-01-01_to_2022-02-28_v3_labeled_sentiment.pt"
+      }
+    },
+    {
+      "model": "lstm",
+      "feature_group": "sentiment_only",
+      "feature_columns": [
+        "positive_score",
+        "negative_score",
+        "neutral_score",
+        "sentiment_score",
+        "sentiment_confidence",
+        "article_count",
+        "message_count"
+      ],
+      "sequence_length": 30,
+      "include_current_row": true,
+      "split_sizes": {
+        "train": 1460,
+        "validation": 425,
+        "test": 595
+      },
+      "best_validation": {
+        "mae": 0.030642572790384293,
+        "rmse": 0.039982957026429754,
+        "directional_accuracy": 0.5764705882352941,
+        "correlation": 0.3006276389404378,
+        "prediction_mean": 0.011642295867204666,
+        "prediction_std": 0.01839086413383484,
+        "loss": 0.41361438386580524,
+        "selection_score": 0.04764360022402583,
+        "epoch": 19
+      },
+      "test_metrics": {
+        "mae": 0.0515182800590992,
+        "rmse": 0.06875644553379238,
+        "directional_accuracy": 0.39327731092436974,
+        "correlation": 0.002439507504239194,
+        "prediction_mean": 0.01332271471619606,
+        "prediction_std": 0.02011810801923275,
+        "loss": 0.6953952942575727
+      },
+      "paths": {
+        "predictions": "reports\\lstm_sentiment_only_ablation_predictions_2020-01-01_to_2022-02-28_v3_labeled_sentiment.csv",
+        "checkpoint": "model_checkpoints\\lstm_sentiment_only_ablation_best_2020-01-01_to_2022-02-28_v3_labeled_sentiment.pt"
+      }
+    },
+    {
+      "model": "gru",
+      "feature_group": "technical_only",
+      "feature_columns": [
+        "returns",
+        "rsi",
+        "macd",
+        "bbp",
+        "momentum",
+        "volume"
+      ],
+      "sequence_length": 20,
+      "include_current_row": true,
+      "split_sizes": {
+        "train": 1510,
+        "validation": 425,
+        "test": 595
+      },
+      "best_validation": {
+        "mae": 0.03144019469618797,
+        "rmse": 0.041926551688616566,
+        "directional_accuracy": 0.43529411764705883,
+        "correlation": 0.19412249307759352,
+        "prediction_mean": 0.006448463536798954,
+        "prediction_std": 0.01666465401649475,
+        "loss": 0.32882785516626695,
+        "selection_score": 0.04030422803741201,
+        "epoch": 20
+      },
+      "test_metrics": {
+        "mae": 0.04868490993976593,
+        "rmse": 0.06829308633652917,
+        "directional_accuracy": 0.36470588235294116,
+        "correlation": -0.14235272014458755,
+        "prediction_mean": 0.0040305485017597675,
+        "prediction_std": 0.0159598421305418,
+        "loss": 0.5545067737082473
+      },
+      "paths": {
+        "predictions": "reports\\gru_technical_only_ablation_predictions_2020-01-01_to_2022-02-28_v3_labeled_sentiment.csv",
+        "checkpoint": "model_checkpoints\\gru_technical_only_ablation_best_2020-01-01_to_2022-02-28_v3_labeled_sentiment.pt"
+      }
+    },
+    {
+      "model": "gru",
+      "feature_group": "sentiment_only",
+      "feature_columns": [
+        "positive_score",
+        "negative_score",
+        "neutral_score",
+        "sentiment_score",
+        "sentiment_confidence",
+        "article_count",
+        "message_count"
+      ],
+      "sequence_length": 20,
+      "include_current_row": true,
+      "split_sizes": {
+        "train": 1510,
+        "validation": 425,
+        "test": 595
+      },
+      "best_validation": {
+        "mae": 0.031114699319005013,
+        "rmse": 0.04091179142165209,
+        "directional_accuracy": 0.56,
+        "correlation": 0.1988543260939592,
+        "prediction_mean": 0.015012559480965137,
+        "prediction_std": 0.011875935830175877,
+        "loss": 0.32344773324096904,
+        "selection_score": 0.036695048947027506,
+        "epoch": 20
+      },
+      "test_metrics": {
+        "mae": 0.050176046788692474,
+        "rmse": 0.06760160542646214,
+        "directional_accuracy": 0.37478991596638656,
+        "correlation": -0.029926490163947543,
+        "prediction_mean": 0.014801505953073502,
+        "prediction_std": 0.01206575520336628,
+        "loss": 0.5708711594092746
+      },
+      "paths": {
+        "predictions": "reports\\gru_sentiment_only_ablation_predictions_2020-01-01_to_2022-02-28_v3_labeled_sentiment.csv",
+        "checkpoint": "model_checkpoints\\gru_sentiment_only_ablation_best_2020-01-01_to_2022-02-28_v3_labeled_sentiment.pt"
+      }
+    }
+  ],
+  "runtime_seconds": 162.057
+}

@@ -3,7 +3,7 @@ import pandas as pd
 
 def get_data(
     symbol,
-    dates=pd.bdate_range(start='2019-01-01', end='2022-12-31')
+    dates=pd.bdate_range(start='2020-01-01', end='2022-02-28')
 ):
     symbols_available = ["AAPL", "AMZN", "FB", "TSLA", "META", "NVDA"]
 

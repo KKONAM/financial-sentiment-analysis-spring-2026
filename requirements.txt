@@ -1,0 +1,7 @@
+# Local development install for a .venv.
+# Runtime dependencies are declared in pyproject.toml and installed by -e .
+-e .
+
+# Notebook support for data/get_data.ipynb and VS Code/Jupyter kernels.
+ipykernel>=6.29
+jupyterlab>=4.2

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "financial-sentiment-analysis-spring-2026"
+version = "0.1.0"
+description = "Financial sentiment analysis pipeline for stock movement prediction."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.26",
+  "pandas>=2.2",
+  "requests>=2.32",
+  "python-dotenv>=1.0",
+  "scikit-learn>=1.5",
+  "matplotlib>=3.8",
+  "torch>=2.3",
+  "transformers>=4.41",
+  "yfinance>=0.2.54",
+  "typer>=0.12",
+  "rich>=13.7",
+]
+
+[project.scripts]
+financial-sentiment-2026 = "cli:app"
+
+[tool.setuptools]
+py-modules = ["cli", "config", "pipeline"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

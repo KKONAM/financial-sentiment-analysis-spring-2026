@@ -1,0 +1,51 @@
+{
+  "best_validation": {
+    "sequence_length": 10,
+    "include_current_row": false,
+    "hidden_size": 128,
+    "num_layers": 4,
+    "classifier_hidden": 16,
+    "head_layers": 2,
+    "bidirectional": false,
+    "gru_dropout": 0.1,
+    "fc_dropout": 0.2,
+    "activation_name": "tanh",
+    "pooling_name": "max",
+    "use_layer_norm": true,
+    "gru_bias": false,
+    "learning_rate": 0.001,
+    "weight_decay": 1e-06,
+    "batch_size": 32,
+    "loss_name": "mae",
+    "smooth_l1_beta": 0.05,
+    "optimizer_name": "adamw",
+    "gradient_clip": 1.0,
+    "scale_target": false,
+    "seed": 42,
+    "val_mae": 0.06458605825901031,
+    "val_rmse": 0.08351386031810237,
+    "val_directional_accuracy": 0.4854838709677419,
+    "val_correlation": -0.1058138430809845,
+    "val_prediction_mean": -0.02105763554573059,
+    "val_prediction_std": 0.017091671004891396,
+    "selection_score": 0.09016232514966208,
+    "epochs_ran": 8,
+    "trial": 1,
+    "seconds": 40.152
+  },
+  "test_metrics": {
+    "mae": 0.05970577895641327,
+    "rmse": 0.07818313164423152,
+    "directional_accuracy": 0.5180327868852459,
+    "correlation": 0.08655241550987303,
+    "prediction_mean": -0.03071633353829384,
+    "prediction_std": 0.0019522398943081498
+  },
+  "paths": {
+    "search_results": "reports\\gru_hyperparameter_search.csv",
+    "best_config": "reports\\gru_best_hyperparameters.json",
+    "predictions": "reports\\gru_tuned_5d_return_predictions.csv",
+    "checkpoint": "model_checkpoints\\gru_tuned_5d_return_best.pt"
+  },
+  "runtime_seconds": 40.695
+}

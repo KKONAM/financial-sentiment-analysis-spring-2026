@@ -1,0 +1,61 @@
+{
+  "model": "gru",
+  "feature_group": "technical_only",
+  "feature_columns": [
+    "returns",
+    "rsi",
+    "macd",
+    "bbp",
+    "momentum",
+    "volume"
+  ],
+  "best_validation": {
+    "sequence_length": 20,
+    "include_current_row": true,
+    "hidden_size": 32,
+    "num_layers": 2,
+    "classifier_hidden": 48,
+    "head_layers": 3,
+    "bidirectional": true,
+    "gru_dropout": 0.1,
+    "fc_dropout": 0.2,
+    "activation_name": "relu",
+    "pooling_name": "mean",
+    "use_layer_norm": true,
+    "gru_bias": true,
+    "learning_rate": 0.003,
+    "weight_decay": 1e-06,
+    "batch_size": 64,
+    "loss_name": "mse",
+    "smooth_l1_beta": 0.05,
+    "optimizer_name": "adam",
+    "gradient_clip": null,
+    "scale_target": true,
+    "seed": 101,
+    "val_mae": 0.03110729157924652,
+    "val_rmse": 0.040760948338834174,
+    "val_directional_accuracy": 0.5647058823529412,
+    "val_correlation": 0.2957200060571086,
+    "val_prediction_mean": 0.01915397122502327,
+    "val_prediction_std": 0.01859813742339611,
+    "selection_score": 0.036060773562358546,
+    "epochs_ran": 39,
+    "trial": 45,
+    "seconds": 26.625
+  },
+  "test_metrics": {
+    "mae": 0.0549309216439724,
+    "rmse": 0.07486302787524907,
+    "directional_accuracy": 0.31596638655462184,
+    "correlation": -0.07230677044729092,
+    "prediction_mean": 0.020788397639989853,
+    "prediction_std": 0.027056362479925156
+  },
+  "paths": {
+    "search_results": "reports\\gru_technical_only_tuned_2020-01-01_to_2022-02-28_v3_labeled_sentiment_search.csv",
+    "best_config": "reports\\gru_technical_only_tuned_2020-01-01_to_2022-02-28_v3_labeled_sentiment_best.json",
+    "predictions": "reports\\gru_technical_only_tuned_2020-01-01_to_2022-02-28_v3_labeled_sentiment_predictions.csv",
+    "checkpoint": "model_checkpoints\\gru_technical_only_tuned_2020-01-01_to_2022-02-28_v3_labeled_sentiment_best.pt"
+  },
+  "runtime_seconds": 2312.73
+}

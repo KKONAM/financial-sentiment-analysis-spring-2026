@@ -1,0 +1,46 @@
+{
+  "best_validation": {
+    "sequence_length": 20,
+    "include_current_row": true,
+    "hidden_size": 32,
+    "num_layers": 2,
+    "classifier_hidden": 8,
+    "bidirectional": false,
+    "lstm_dropout": 0.1,
+    "fc_dropout": 0.0,
+    "learning_rate": 0.0001,
+    "weight_decay": 1e-05,
+    "batch_size": 64,
+    "loss_name": "mse",
+    "smooth_l1_beta": 0.05,
+    "optimizer_name": "adamw",
+    "gradient_clip": null,
+    "scale_target": false,
+    "seed": 42,
+    "val_mae": 0.06064220517873764,
+    "val_rmse": 0.07879138992741506,
+    "val_directional_accuracy": 0.4612903225806452,
+    "val_correlation": 0.16213820792082828,
+    "val_prediction_mean": -0.012975583784282207,
+    "val_prediction_std": 0.015911296010017395,
+    "selection_score": 0.09395194122209947,
+    "epochs_ran": 11,
+    "trial": 14,
+    "seconds": 3.762
+  },
+  "test_metrics": {
+    "mae": 0.05965816229581833,
+    "rmse": 0.07853403895602479,
+    "directional_accuracy": 0.3983606557377049,
+    "correlation": -0.1149379944505449,
+    "prediction_mean": -0.012809383682906628,
+    "prediction_std": 0.014846335165202618
+  },
+  "paths": {
+    "search_results": "reports\\lstm_hyperparameter_search_v3_labeled_sentiment.csv",
+    "best_config": "reports\\lstm_best_hyperparameters_v3_labeled_sentiment.json",
+    "predictions": "reports\\lstm_tuned_5d_return_predictions_v3_labeled_sentiment.csv",
+    "checkpoint": "model_checkpoints\\lstm_tuned_5d_return_best_v3_labeled_sentiment.pt"
+  },
+  "runtime_seconds": 506.031
+}

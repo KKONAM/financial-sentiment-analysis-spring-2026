@@ -1,0 +1,19 @@
+[runner] started lstm_combined pid=16600
+[runner] started gru_combined pid=18936
+[runner] started transformer_combined pid=6076
+[runner] completed lstm_combined in 590.0s
+[runner] started lstm_sentiment_only pid=5888
+[runner] completed lstm_sentiment_only in 890.0s
+[runner] started lstm_technical_only pid=35928
+[runner] completed transformer_combined in 2420.1s
+[runner] started gru_sentiment_only pid=30244
+[runner] completed gru_combined in 2470.2s
+[runner] started gru_technical_only pid=36544
+[runner] completed lstm_technical_only in 1040.1s
+[runner] started transformer_sentiment_only pid=36176
+[runner] completed transformer_sentiment_only in 2540.1s
+[runner] started transformer_technical_only pid=16848
+[runner] completed gru_sentiment_only in 2710.2s
+[runner] completed gru_technical_only in 2700.1s
+[runner] completed transformer_technical_only in 1430.1s
+[runner] finished completed=9 failed=0

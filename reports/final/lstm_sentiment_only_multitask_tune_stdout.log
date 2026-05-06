@@ -1,0 +1,142 @@
+[multitask] model=lstm features=sentiment_only device=cpu trials=60 max_epochs=80
+[multitask] trial=001/060 score=0.051790 val_rmse=0.042757 val_dir_acc=0.5350 val_macro_f1=0.3410 epochs=11 best=0.051790
+[multitask] trial=002/060 score=0.046804 val_rmse=0.042829 val_dir_acc=0.3750 val_macro_f1=0.3466 epochs=16 best=0.046804
+[multitask] trial=003/060 score=0.045029 val_rmse=0.043260 val_dir_acc=0.5600 val_macro_f1=0.2738 epochs=39 best=0.045029
+[multitask] trial=004/060 score=0.044690 val_rmse=0.043667 val_dir_acc=0.5475 val_macro_f1=0.3746 epochs=44 best=0.044690
+[multitask] trial=005/060 score=0.053020 val_rmse=0.042437 val_dir_acc=0.5375 val_macro_f1=0.2958 epochs=28 best=0.044690
+[multitask] trial=006/060 score=0.044638 val_rmse=0.042260 val_dir_acc=0.3975 val_macro_f1=0.3715 epochs=32 best=0.044638
+[multitask] trial=007/060 score=0.041296 val_rmse=0.040874 val_dir_acc=0.4775 val_macro_f1=0.4011 epochs=31 best=0.041296
+[multitask] trial=008/060 score=0.045255 val_rmse=0.043328 val_dir_acc=0.4875 val_macro_f1=0.3428 epochs=38 best=0.041296
+[multitask] trial=009/060 score=0.047345 val_rmse=0.043030 val_dir_acc=0.3375 val_macro_f1=0.3252 epochs=18 best=0.041296
+[multitask] trial=010/060 score=0.043080 val_rmse=0.042087 val_dir_acc=0.5650 val_macro_f1=0.2933 epochs=39 best=0.041296
+[multitask] trial=011/060 score=0.050075 val_rmse=0.042985 val_dir_acc=0.5600 val_macro_f1=0.2618 epochs=17 best=0.041296
+[multitask] trial=012/060 score=0.050305 val_rmse=0.042613 val_dir_acc=0.4150 val_macro_f1=0.3709 epochs=31 best=0.041296
+[multitask] trial=013/060 score=0.051363 val_rmse=0.042882 val_dir_acc=0.4275 val_macro_f1=0.2935 epochs=80 best=0.041296
+[multitask] trial=014/060 score=0.045575 val_rmse=0.043069 val_dir_acc=0.4350 val_macro_f1=0.3645 epochs=16 best=0.041296
+[multitask] trial=015/060 score=0.043745 val_rmse=0.042128 val_dir_acc=0.4800 val_macro_f1=0.3538 epochs=26 best=0.041296
+[multitask] trial=016/060 score=0.053957 val_rmse=0.042238 val_dir_acc=0.3575 val_macro_f1=0.3147 epochs=17 best=0.041296
+[multitask] trial=017/060 score=0.050854 val_rmse=0.042666 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=45 best=0.041296
+[multitask] trial=018/060 score=0.042575 val_rmse=0.042008 val_dir_acc=0.5700 val_macro_f1=0.2955 epochs=23 best=0.041296
+[multitask] trial=019/060 score=0.045935 val_rmse=0.044310 val_dir_acc=0.5300 val_macro_f1=0.3688 epochs=55 best=0.041296
+[multitask] trial=020/060 score=0.046565 val_rmse=0.041474 val_dir_acc=0.3050 val_macro_f1=0.2855 epochs=19 best=0.041296
+[multitask] trial=021/060 score=0.045380 val_rmse=0.043354 val_dir_acc=0.5375 val_macro_f1=0.3103 epochs=55 best=0.041296
+[multitask] trial=022/060 score=0.055431 val_rmse=0.042153 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=25 best=0.041296
+[multitask] trial=023/060 score=0.047537 val_rmse=0.041873 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=38 best=0.041296
+[multitask] trial=024/060 score=0.046597 val_rmse=0.042349 val_dir_acc=0.5625 val_macro_f1=0.3275 epochs=64 best=0.041296
+[multitask] trial=025/060 score=0.053876 val_rmse=0.042294 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=63 best=0.041296
+[multitask] trial=026/060 score=0.051477 val_rmse=0.042773 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=30 best=0.041296
+[multitask] trial=027/060 score=0.042236 val_rmse=0.043037 val_dir_acc=0.5850 val_macro_f1=0.3719 epochs=42 best=0.041296
+[multitask] trial=028/060 score=0.049081 val_rmse=0.043189 val_dir_acc=0.5150 val_macro_f1=0.3129 epochs=11 best=0.041296
+[multitask] trial=029/060 score=0.052712 val_rmse=0.042406 val_dir_acc=0.5725 val_macro_f1=0.3254 epochs=18 best=0.041296
+[multitask] trial=030/060 score=0.050567 val_rmse=0.042277 val_dir_acc=0.4575 val_macro_f1=0.3864 epochs=31 best=0.041296
+[multitask] trial=031/060 score=0.043566 val_rmse=0.042392 val_dir_acc=0.5075 val_macro_f1=0.3591 epochs=35 best=0.041296
+[multitask] trial=032/060 score=0.049119 val_rmse=0.044928 val_dir_acc=0.3900 val_macro_f1=0.3519 epochs=80 best=0.041296
+[multitask] trial=033/060 score=0.044280 val_rmse=0.043401 val_dir_acc=0.5375 val_macro_f1=0.3705 epochs=23 best=0.041296
+[multitask] trial=034/060 score=0.049917 val_rmse=0.042289 val_dir_acc=0.4225 val_macro_f1=0.3634 epochs=38 best=0.041296
+[multitask] trial=035/060 score=0.045444 val_rmse=0.043134 val_dir_acc=0.5450 val_macro_f1=0.3246 epochs=29 best=0.041296
+[multitask] trial=036/060 score=0.041549 val_rmse=0.041503 val_dir_acc=0.5575 val_macro_f1=0.3588 epochs=21 best=0.041296
+[multitask] trial=037/060 score=0.041883 val_rmse=0.041564 val_dir_acc=0.5750 val_macro_f1=0.3042 epochs=44 best=0.041296
+[multitask] trial=038/060 score=0.043345 val_rmse=0.042614 val_dir_acc=0.5650 val_macro_f1=0.3194 epochs=67 best=0.041296
+[multitask] trial=039/060 score=0.052298 val_rmse=0.042626 val_dir_acc=0.5325 val_macro_f1=0.3482 epochs=25 best=0.041296
+[multitask] trial=040/060 score=0.050315 val_rmse=0.042639 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=28 best=0.041296
+[multitask] trial=041/060 score=0.046052 val_rmse=0.043438 val_dir_acc=0.4750 val_macro_f1=0.3364 epochs=16 best=0.041296
+[multitask] trial=042/060 score=0.051256 val_rmse=0.042612 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=14 best=0.041296
+[multitask] trial=043/060 score=0.044014 val_rmse=0.042941 val_dir_acc=0.5250 val_macro_f1=0.3585 epochs=23 best=0.041296
+[multitask] trial=044/060 score=0.044626 val_rmse=0.042717 val_dir_acc=0.5100 val_macro_f1=0.3243 epochs=55 best=0.041296
+[multitask] trial=045/060 score=0.044987 val_rmse=0.042771 val_dir_acc=0.4500 val_macro_f1=0.3626 epochs=40 best=0.041296
+[multitask] trial=046/060 score=0.043180 val_rmse=0.042224 val_dir_acc=0.5250 val_macro_f1=0.3506 epochs=26 best=0.041296
+[multitask] trial=047/060 score=0.042931 val_rmse=0.042031 val_dir_acc=0.5600 val_macro_f1=0.3005 epochs=31 best=0.041296
+[multitask] trial=048/060 score=0.045871 val_rmse=0.042433 val_dir_acc=0.4250 val_macro_f1=0.2978 epochs=37 best=0.041296
+[multitask] trial=049/060 score=0.042255 val_rmse=0.042321 val_dir_acc=0.5575 val_macro_f1=0.3866 epochs=32 best=0.041296
+[multitask] trial=050/060 score=0.048403 val_rmse=0.046073 val_dir_acc=0.5375 val_macro_f1=0.3245 epochs=34 best=0.041296
+[multitask] trial=051/060 score=0.051725 val_rmse=0.042765 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=28 best=0.041296
+[multitask] trial=052/060 score=0.044343 val_rmse=0.042935 val_dir_acc=0.5550 val_macro_f1=0.2858 epochs=69 best=0.041296
+[multitask] trial=053/060 score=0.053602 val_rmse=0.042849 val_dir_acc=0.5475 val_macro_f1=0.2359 epochs=20 best=0.041296
+[multitask] trial=054/060 score=0.039490 val_rmse=0.040736 val_dir_acc=0.5900 val_macro_f1=0.3618 epochs=39 best=0.039490
+[multitask] trial=055/060 score=0.056320 val_rmse=0.044172 val_dir_acc=0.5425 val_macro_f1=0.2522 epochs=15 best=0.039490
+[multitask] trial=056/060 score=0.042159 val_rmse=0.041756 val_dir_acc=0.5575 val_macro_f1=0.3402 epochs=42 best=0.039490
+[multitask] trial=057/060 score=0.051135 val_rmse=0.042931 val_dir_acc=0.4250 val_macro_f1=0.3592 epochs=40 best=0.039490
+[multitask] trial=058/060 score=0.054929 val_rmse=0.042846 val_dir_acc=0.4700 val_macro_f1=0.3315 epochs=32 best=0.039490
+[multitask] trial=059/060 score=0.045872 val_rmse=0.042536 val_dir_acc=0.4675 val_macro_f1=0.3351 epochs=67 best=0.039490
+[multitask] trial=060/060 score=0.060274 val_rmse=0.042325 val_dir_acc=0.3350 val_macro_f1=0.1673 epochs=27 best=0.039490
+[multitask] best validation config:
+{
+  "sequence_length": 20,
+  "include_current_row": true,
+  "hidden_size": 96,
+  "num_layers": 2,
+  "classifier_hidden": 16,
+  "head_layers": 2,
+  "bidirectional": false,
+  "recurrent_dropout": 0.0,
+  "fc_dropout": 0.1,
+  "activation_name": "relu",
+  "pooling_name": "last",
+  "use_layer_norm": true,
+  "gru_bias": true,
+  "learning_rate": 0.0003,
+  "weight_decay": 0.0,
+  "batch_size": 32,
+  "regression_loss_name": "mae",
+  "smooth_l1_beta": 0.1,
+  "direction_loss_weight": 2.0,
+  "class_weight_mode": "none",
+  "optimizer_name": "adam",
+  "gradient_clip": 0.25,
+  "scale_target": true,
+  "seed": 42,
+  "val_mae": 0.03155528008937836,
+  "val_rmse": 0.04073643748505605,
+  "val_correlation": 0.28499848362440694,
+  "val_prediction_mean": 0.01294980850070715,
+  "val_prediction_std": 0.01327463798224926,
+  "val_threshold_direction_accuracy": 0.5425,
+  "val_direction_accuracy": 0.59,
+  "val_direction_baseline_accuracy": 0.5475,
+  "val_direction_lift": 0.04249999999999998,
+  "val_direction_macro_f1": 0.3618265977845357,
+  "val_direction_weighted_f1": 0.5162389623713041,
+  "val_direction_macro_precision": 0.3907870458738945,
+  "val_direction_macro_recall": 0.39396624185011014,
+  "selection_score": 0.03949009908529047,
+  "epochs_ran": 39,
+  "trial": 54,
+  "seconds": 28.216
+}
+[multitask] final test metrics:
+{
+  "mae": 0.0499715656042099,
+  "rmse": 0.06677560955762517,
+  "correlation": 0.03651887119428939,
+  "prediction_mean": 0.012506143189966679,
+  "prediction_std": 0.01501182559877634,
+  "threshold_direction_accuracy": 0.38823529411764707,
+  "direction_accuracy": 0.4184873949579832,
+  "direction_baseline_accuracy": 0.5025210084033613,
+  "direction_lift": -0.08403361344537813,
+  "direction_macro_f1": 0.2721642286859678,
+  "direction_weighted_f1": 0.35313836490307077,
+  "direction_macro_precision": 0.30295893719806766,
+  "direction_macro_recall": 0.33527835100453046,
+  "confusion_matrix": [
+    [
+      59,
+      0,
+      240
+    ],
+    [
+      11,
+      0,
+      50
+    ],
+    [
+      45,
+      0,
+      190
+    ]
+  ]
+}
+[multitask] wrote reports\final\lstm_sentiment_only_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_search.csv
+[multitask] wrote reports\final\lstm_sentiment_only_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_best.json
+[multitask] wrote reports\final\lstm_sentiment_only_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_predictions.csv
+[multitask] wrote model_checkpoints\final\lstm_sentiment_only_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_best.pt

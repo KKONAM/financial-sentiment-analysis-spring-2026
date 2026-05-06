@@ -8,18 +8,17 @@
 \usepackage{titlesec}
 \usepackage{caption}
 
-% Section formatting
 \titleformat{\section}{\bfseries}{\thesection.}{0.5em}{}
 \titleformat{\subsection}{\bfseries}{\thesubsection}{0.5em}{}
 
-\title{\textbf{Financial Sentiment vs Market Signals \\ 
-for Stock Movement Prediction} \\[0.5em]
+\title{\textbf{Financial Sentiment and Technical Signals for\\
+Five-Day Stock Return Prediction} \\[0.5em]
 \large CS 7643}
 
 \author{
-Your Name \\
+Agha A Raza, Konam G Kenneth \\
 Georgia Institute of Technology \\
-\texttt{your.email@gatech.edu}
+\texttt{ragha3@gatech.edu, kkonam3@gatech.edu}
 }
 
 \date{}
@@ -30,114 +29,418 @@ Georgia Institute of Technology \\
 
 \begin{abstract}
 \small
-Financial markets are influenced by both historical price behavior and new information conveyed through textual sources such as news and social media. This paper investigates whether sentiment extracted from financial text improves stock movement prediction beyond traditional financial features. We formulate the task as a sequence learning problem and compare three models: (1) financial-only, (2) sentiment-only, and (3) combined financial and sentiment features.
+Predicting short-horizon stock returns is difficult. Daily price movements are noisy and regime-dependent, and the relationship between any fixed set of predictors and future returns tends to shift over time. This project investigates whether daily StockTwits sentiment features, combined with standard technical indicators, improve deep sequence models for forecasting five-trading-day returns. We construct a panel dataset for AAPL, AMZN, META, NVDA, and TSLA and evaluate tuned LSTM, GRU, and Transformer models under a purged chronological split that prevents target windows from crossing train, validation, or test boundaries.
+
+A central finding is that the choice of sentiment extractor matters considerably. Out-of-box FinBERT classified 80.77\% of individual StockTwits messages as neutral, which caused neutral to be the dominant sentiment class in daily aggregates for every ticker-day. We address this by fine-tuning FinBERT on messages with explicit \textit{Bullish} and \textit{Bearish} user labels, treating unlabeled messages as unknown rather than neutral. The fine-tuned classifier reaches 0.8082 test accuracy and 0.8968 test AUC on chronologically held-out labeled messages.
+
+In return prediction, the sentiment-only Transformer achieves the lowest neural test error (MAE 0.0470, RMSE 0.0647), while the sentiment-only LSTM produces the strongest positive return correlation (0.2091). That said, no neural model outperforms the always-down directional baseline on the test split, and the zero-return baseline remains competitive on regression error. Fine-tuned StockTwits sentiment contains a measurable return-ranking signal, but it is not sufficient on its own to produce a reliable directional trading rule.
 \end{abstract}
 \vspace{1em}
 
 \section{Introduction}
 
-Predicting stock price movements is a challenging problem due to the noisy and dynamic nature of financial markets. Traditional approaches rely on historical price data and technical indicators such as momentum and volatility measures. However, markets are also driven by information flow, including earnings reports, news releases, and public sentiment.
+Stock return prediction is one of the harder supervised learning problems in applied machine learning. Daily returns are noisy, the signal-to-noise ratio is low, and whatever structure exists tends not to persist across different market regimes. Most classical approaches rely on technical indicators derived from the price series itself, such as momentum, RSI, MACD, and volatility measures, which capture recent price behavior but do not directly measure how investors are reacting to new information.
 
-Recent advances in natural language processing, particularly transformer-based models such as RoBERTa, allow for extracting meaningful representations from text. This raises the question: can textual sentiment improve stock prediction models beyond traditional financial signals?
+Social media platforms like StockTwits provide a different kind of signal. Users post short, ticker-tagged messages expressing views on stocks, and a subset of these messages carry explicit \textit{Bullish} or \textit{Bearish} labels chosen by the author. Prior work suggests this kind of data is informative albeit the signal tends to be weak and sensitive to timing \cite{renault2017intraday,divernois2023stocktwits}. The question we investigate is whether daily aggregates of such sentiment, combined with standard technical features, improve a deep sequence model's ability to forecast five-trading-day returns.
 
-In this work, we evaluate the contribution of sentiment features through a controlled comparison between financial-only, sentiment-only, and combined models.
+We evaluate LSTM, GRU, and Transformer sequence encoders. These three architectures represent meaningfully different mechanisms for temporal modeling: the LSTM maintains explicit cell and hidden states via gating, the GRU uses a more compact gating structure, and the Transformer replaces sequential recurrence with self-attention over the entire lookback window. Rather than reporting a single combined model, we run controlled feature ablations across all three architectures and evaluate both regression error and directional accuracy against simple baselines. The split design uses purged chronological boundaries to avoid look-ahead leakage from the five-day forward return target.
 
-\section{Approach}
+One thing that turned out to be as important as the model architecture was the sentiment extraction itself, which we describe in detail in Section~\ref{sec:data}.
 
-\subsection{Problem Formulation}
+\section{Related Work and Research Gap}
 
-We define stock movement prediction as a binary classification task:
+A substantial body of prior work examines the relationship between social media sentiment and stock returns. Renault \cite{renault2017intraday} studies intraday StockTwits messages and finds that early-day sentiment changes forecast subsequent market returns, particularly for novice investors. Divernois and Filipovic \cite{divernois2023stocktwits} examine daily StockTwits polarity and report a positive contemporaneous correlation with returns, but find that next-day predictability is generally weak except around spikes in message volume. These results motivate our use of StockTwits as a data source while also suggesting that the signal is fragile.
 
-\begin{equation}
-y_t =
-\begin{cases}
-1 & \text{if price increases at time } t+1 \\
-0 & \text{otherwise}
-\end{cases}
-\end{equation}
+Several deep learning papers have combined textual sentiment with historical price data. StockNet \cite{xu2018stocknet} fuses tweet embeddings with historical prices for binary movement prediction. Hiew et al.\ \cite{hiew2019bert} construct a BERT-based financial sentiment index and use it as input to an LSTM. More recent work includes FinBERT-based approaches combined with LSTM or ensemble classifiers \cite{halder2022finbertlstm,liu2023stocktwitsfinbert}, as well as Transformer and multimodal architectures that fuse market and text signals via attention mechanisms \cite{kaeley2023transformer,hajek2025multimodal,pei2025cmtf}.
 
-\subsection{Sentiment Modeling}
+What is less common in this literature is an explicit treatment of domain mismatch in the sentiment model. Most papers apply a pretrained financial sentiment classifier to their text source without reporting the raw class distribution of predictions. As we show below, out-of-box FinBERT produces a heavily neutral signal on StockTwits that essentially destroys any useful variation in the daily aggregates. Fixing this through domain-specific fine-tuning is the necessary first step, and its effect on downstream prediction is large enough that it would be misleading to report only the final model results without documenting the preprocessing failure.
 
-We use a fine-tuned RoBERTa model to extract sentiment embeddings from financial text, including news articles and social media posts. These embeddings capture semantic and contextual information beyond simple sentiment labels.
+\section{Data and Features}
+\label{sec:data}
 
-\subsection{Feature Engineering}
+\subsection{Dataset}
 
-For each day, we construct:
+The dataset consists of daily observations for five large-cap technology stocks: AAPL, AMZN, META, NVDA, and TSLA. For each ticker, we combine Open, High, Low, Close, Volume (OHLCV) market data with StockTwits messages scraped by ticker symbol. Some messages include a user-provided \textit{Bullish} or \textit{Bearish} label, but the majority do not. Unlabeled messages are treated as unknown rather than neutral throughout the pipeline.
 
-\textbf{Financial Features:}
-\begin{itemize}
-    \item Returns
-    \item Trading volume
-    \item RSI, MACD, Bollinger Bands
-\end{itemize}
+Historical StockTwits coverage in our scrape ends around late February or early March 2022 depending on the ticker. To keep the evaluation on data with real sentiment observations, we restrict the experiment to January 2020 through February 2022. After applying technical-indicator warmup and constructing the five-day forward return target, the modeled dataset covers January 2, 2020 through February 18, 2022 and contains 2,695 stock-day rows across all five tickers.
 
-\textbf{Sentiment Features:}
-\begin{itemize}
-    \item Aggregated daily embeddings from text
-\end{itemize}
+Data are split chronologically. Observations through April 30, 2021 form the training set, May 1 through August 31, 2021 form the validation set, and the remaining observations form the test set. Because the prediction target is a five-trading-day forward return, any sample whose target window would extend past a split boundary is removed to prevent leakage. With a representative 20-day lookback, the final split contains 1,555 training sequences, 400 validation sequences, and 595 test sequences.
 
-\subsection{Temporal Modeling}
+\subsection{Market Features}
 
-We model sequential dependencies using an LSTM network:
+For each stock-day, we compute daily return, relative strength index (RSI), moving-average convergence divergence (MACD), Bollinger Band position, momentum, and trading volume. These capture short-term price behavior, trend, overbought or oversold conditions, and market activity. The features are standard and their construction is not novel; we include them primarily to evaluate whether they add anything beyond the sentiment signal.
 
-\begin{equation}
-X = [x_1, x_2, ..., x_T]
-\end{equation}
+\subsection{Sentiment Features}
 
-The model outputs a prediction for the next-day movement.
+The final sentiment feature set consists of seven daily aggregates from the fine-tuned FinBERT classifier: bullish share, bearish share, uncertain share, sentiment score (bullish minus bearish share), classifier confidence, message count, and an article count field. In the pipeline, bullish share is stored as \texttt{positive\_score}, bearish share as \texttt{negative\_score}, uncertain share as \texttt{neutral\_score}, and bullish-minus-bearish as \texttt{sentiment\_score}. The uncertain category represents classifier abstentions, not observed neutral labels; it is assigned when model confidence is low or when the cleaned message contains little beyond ticker symbols.
 
-\section{Experiments}
+Sentiment aggregates are aligned with market features at the ticker-day level. All input features are then standardized using training-period statistics only, and the same scaler is applied to validation and test data without refitting.
 
-\subsection{Datasets}
+\subsection{FinBERT Fine-Tuning}
 
-\begin{itemize}
-    \item Financial PhraseBank
-    \item Kaggle financial news datasets
-    \item StockTwits sentiment data
-    \item Yahoo Finance historical data
-\end{itemize}
+We initially applied out-of-box FinBERT \cite{araci2019finbert} to the StockTwits messages. The result was not useful: 80.77\% of individual messages were assigned to the neutral class. After daily aggregation, neutral was the dominant sentiment class on every ticker-day in the dataset. This is likely a domain mismatch problem as FinBERT was pretrained on financial news text from Reuters and Bloomberg. News in this form is formal, syntactically complete, and written about market events rather than in response to them. StockTwits posts are short, colloquial, often just a ticker symbol followed by a brief opinion or emoji, and the vocabulary of trading-intent language is quite different from news prose. Because out-of-box FinBERT was not useful, we treat that experiment as a preprocessing failure rather than as part of the main results.
 
-\subsection{Experimental Setup}
-
-We evaluate three models:
-
-\begin{itemize}
-    \item Financial-only
-    \item Sentiment-only
-    \item Combined model
-\end{itemize}
-
-\subsection{Evaluation Metrics}
-
-\begin{itemize}
-    \item Accuracy
-    \item F1 Score
-    \item Precision / Recall
-\end{itemize}
-
-\section{Results}
+The final sentiment extractor is a version of FinBERT fine-tuned on StockTwits messages that carry explicit user labels. \textit{Bullish} messages are mapped to the positive class and \textit{Bearish} messages to the negative class. Unlabeled messages are excluded from supervised training. The fine-tuning split follows the same chronology as the return prediction experiment: messages through April 30, 2021 are used for training, messages from May 1 through August 31, 2021 for validation, and the remaining labeled messages for evaluation. A two-class output head is used, and the checkpoint is selected by validation AUC. After fine-tuning, all StockTwits messages are rescored with a confidence threshold that creates an \textit{uncertain} abstention category. After daily aggregation, the average ticker-day sentiment shares are 51.0\% bullish, 20.5\% bearish, and 28.5\% uncertain.
 
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{lcc}
+\begin{tabular}{lcccc}
 \toprule
-Model & Accuracy & F1 \\
+Split & Accuracy & Bal. Acc. & F1 Macro & AUC \\
 \midrule
-Financial-only & -- & -- \\
-Sentiment-only & -- & -- \\
-Combined & -- & -- \\
+Validation & 0.8198 & 0.8198 & 0.8198 & 0.9051 \\
+Test & 0.8082 & 0.8082 & 0.8082 & 0.8968 \\
 \bottomrule
 \end{tabular}
-\caption{Model Performance}
+\caption{Fine-tuned FinBERT performance on chronologically held-out StockTwits messages with explicit \textit{Bullish} or \textit{Bearish} user labels. These metrics evaluate the text classification task, not return prediction.}
+\label{tab:finbert_finetune}
 \end{table}
+
+Because validation and test samples are class-balanced, balanced accuracy equals accuracy. These metrics evaluate label prediction only, not whether labels forecast returns.
+
+\section{Methodology}
+
+\subsection{Prediction Target}
+
+The prediction target is the five-trading-day forward return:
+
+\begin{equation}
+y_t = \frac{P_{t+5} - P_t}{P_t},
+\end{equation}
+
+where $P_t$ is the adjusted closing price at day $t$. All models are trained to predict this as a continuous regression value. For directional evaluation, predicted and realized returns are mapped into three classes using a threshold of 0.005:
+
+\begin{equation}
+d(y) =
+\begin{cases}
+1 & \text{if } y > 0.005, \\
+-1 & \text{if } y < -0.005, \\
+0 & \text{otherwise.}
+\end{cases}
+\end{equation}
+
+The threshold separates moves that are large enough to be economically meaningful from near-flat outcomes.
+
+\subsection{Sequence Construction}
+
+Within each ticker, observations are sorted chronologically and converted into rolling input windows. Each window contains $T$ consecutive trading days ending at day $t$, with one feature vector per day. The model outputs a single scalar prediction for the return from day $t$ to day $t+5$. This corresponds to an end-of-day setup: all market and sentiment features for day $t$ are assumed to be available before the prediction is made. No future information enters the input.
+
+Windows are constructed within ticker groups so that no sequence spans observations from two different stocks. Training, validation, and test windows from all five tickers are then pooled into a shared dataset. Pooling increases the number of training examples and encourages the encoder to learn patterns that generalize across tickers, though it also assumes some cross-ticker transferability that we cannot verify given the limited number of stocks. Sequences whose five-day target window extends past a split boundary are discarded. The lookback length $T$ is treated as a tunable hyperparameter.
+
+\subsection{Models}
+
+All three architectures follow the same high-level structure. For a sequence $X_i \in \mathbb{R}^{T \times d}$, the encoder produces hidden representations $H_i = (h_1,\ldots,h_T)$, which are pooled into a fixed-size vector $z_i$ using a tuned pooling rule. The prediction is then:
+
+\begin{equation}
+\hat{y}_i = f_{\theta}(z_i),
+\end{equation}
+
+where $f_{\theta}$ is a feedforward regression head. All models are trained with a regression loss, and directional labels are derived from $\hat{y}_i$ only after prediction.
+
+\textbf{LSTM.} The long short-term memory model uses input, forget, and output gates to maintain separate hidden and cell states \cite{hochreiter1997lstm}. The cell state gives the LSTM a mechanism to carry information forward over long windows, which could be useful if weak sentiment signals accumulate across multiple days. The LSTM search space covers sequence length, hidden size, recurrent depth, pooling rule, layer normalization, regression head depth and width, activation, dropout, optimizer, weight decay, batch size, loss function, target scaling, and gradient clipping.
+
+\textbf{GRU.} The gated recurrent unit replaces the LSTM's three-gate structure with two gates and a single hidden state \cite{cho2014gru}. This reduces the number of parameters for a given hidden size, which may be advantageous in a small and noisy chronological dataset. The GRU uses the same search space as the LSTM, so the primary architectural difference is the recurrent cell itself.
+
+\textbf{Transformer.} Rather than processing the sequence step by step, the Transformer applies multi-head self-attention over the full lookback window after projecting inputs and adding sinusoidal positional encodings \cite{vaswani2017attention}. We use an encoder-only architecture with feedforward sublayers, layer normalization, tuned pooling, and a regression head. Compared to the recurrent models, the Transformer has higher capacity and fewer sequential inductive biases. This flexibility can help when cross-day interactions are informative, but it also makes the model more likely to overfit in a small chronological dataset, which is a real concern here.
+
+\subsection{Hyperparameter Selection}
+
+Each model and feature combination is tuned independently using a 60-trial random search over its architecture-specific search space. For LSTM and GRU, the shared recurrent search space includes lookback length $T \in \{10,20,30,45\}$, hidden size in $\{24,32,48,64,96\}$, recurrent depth in $\{1,2,3\}$, pooling in \{last, mean, last+mean\}, optional layer normalization, regression-head depth in $\{1,2\}$, head width in $\{8,16,32\}$, activation in \{ReLU, GELU, tanh\}, recurrent dropout in $\{0,0.1,0.2\}$, and fully connected dropout in $\{0,0.1,0.2,0.3\}$. The Transformer search uses the same lookback, pooling, layer-normalization, head, optimizer, and regularization choices, but replaces recurrent hidden size with $d_{model} \in \{32,48,64,96\}$, attention heads in $\{2,3,4,6,8\}$ subject to divisibility by $d_{model}$, encoder layers in $\{1,2,3\}$, feedforward width in $\{64,128,192,256\}$, and transformer dropout in $\{0,0.1,0.2\}$. Across all architectures, candidate optimizers are Adam \cite{kingma2015adam} and AdamW \cite{loshchilov2019adamw}, learning rates are selected from $\{10^{-4},3\times10^{-4},10^{-3}\}$, weight decay from $\{0,10^{-6},10^{-5},10^{-4}\}$, batch size from $\{16,32,64\}$, loss from \{MSE, MAE, SmoothL1\}, SmoothL1 $\beta$ from $\{0.05,0.1,0.2\}$, and gradient clipping from \{none, 0.25, 0.5, 1.0\}.
+
+The validation objective combines RMSE and MAE with a reward for positive return correlation, a reward for directional lift over the validation majority-class baseline, and penalties for negative correlation and near-constant predictions. The prediction collapse penalty was added after preliminary experiments showed that some configurations achieved low RMSE by predicting nearly constant small returns, which produces poor directional performance. Final checkpoints are selected by early stopping on the composite validation score.
+
+\subsection{Feature Ablations}
+
+For each architecture, we run the main experiment under three feature conditions: combined (all technical and sentiment features), technical-only (daily return, RSI, MACD, Bollinger Band position, momentum, volume), and sentiment-only (the seven daily sentiment aggregates). Each condition is tuned with its own independent 60-trial random search rather than by dropping columns from a previously tuned model. This matters because the optimal sequence length, hidden size, and regularization can shift substantially when the input representation changes.
+
+\section{Experiments}
+
+\subsection{Evaluation Metrics}
+
+The primary regression metrics are mean absolute error (MAE) and root mean squared error (RMSE). We also report Pearson correlation between realized and predicted returns, and the mean and standard deviation of predictions. Correlation is reported alongside error metrics because a model can achieve low RMSE by making conservative low-variance predictions without accurately ranking which days have higher returns. Directional accuracy is evaluated after thresholding predicted returns and is treated as a secondary diagnostic, since the models are not trained as classifiers.
+
+\subsection{Baselines}
+
+Neural models are compared against the following baselines: zero-return prediction (always predict 0), training-set mean return prediction, ridge regression on flattened rolling sequences, and the always-up, always-down, and always-flat directional classifiers.
+
+Ridge regression uses the same chronological split and feature standardization, with sequence length selected from $\{10,20,30,45\}$ and the ridge penalty chosen by validation RMSE. It serves as a check on whether deep sequence models add anything over a simple linear model.
+
+The directional baselines are particularly important here. The test period runs from September 2021 through February 2022, which was a drawdown period for large-cap technology stocks. The always-down classifier reaches 0.5025 accuracy on this split, making it a harder benchmark than it would be on a more balanced period. Any neural model that achieves directional accuracy below 0.50 on this test set is performing below naive.
+
+\section{Results}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+Model & Feature Set & MAE & RMSE & Dir. Acc. & Corr. & Pred. Std. \\
+\midrule
+LSTM & Combined & 0.0480 & 0.0665 & 0.3563 & -0.0127 & 0.0147 \\
+LSTM & Technical only & 0.0505 & 0.0698 & \textbf{0.3950} & -0.0267 & 0.0150 \\
+LSTM & Sentiment only & 0.0479 & 0.0649 & 0.3933 & \textbf{0.2091} & 0.0113 \\
+GRU & Combined & 0.0476 & 0.0655 & 0.3395 & 0.0838 & 0.0153 \\
+GRU & Technical only & 0.0500 & 0.0681 & 0.3681 & -0.0513 & 0.0121 \\
+GRU & Sentiment only & 0.0476 & 0.0649 & 0.3765 & 0.1451 & 0.0121 \\
+Transformer & Combined & 0.0503 & 0.0684 & \textbf{0.3950} & 0.0059 & 0.0110 \\
+Transformer & Technical only & 0.0497 & 0.0681 & 0.3681 & -0.0703 & 0.0137 \\
+Transformer & Sentiment only & \textbf{0.0470} & \textbf{0.0647} & 0.3782 & 0.1112 & 0.0137 \\
+\midrule
+Ridge & Combined & 0.0508 & 0.0689 & 0.3378 & 0.0603 & 0.0226 \\
+Ridge & Technical only & 0.0495 & 0.0672 & 0.3815 & -0.0168 & 0.0076 \\
+Ridge & Sentiment only & 0.0486 & 0.0661 & 0.3563 & 0.1405 & 0.0170 \\
+\midrule
+Zero return & Baseline & 0.0448 & 0.0639 & 0.1025 & -- & 0.0000 \\
+Train mean & Baseline & 0.0487 & 0.0664 & \textbf{0.3950} & -- & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Return-only results on the held-out test set across all architecture and feature conditions, alongside ridge, zero-return, and train-mean baselines. Sentiment-only Transformer achieves the lowest neural test error. Sentiment-only LSTM achieves the strongest positive return correlation. No neural model beats the always-down directional baseline of 0.5025.}
+\end{table*}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lc}
+\toprule
+Direction Baseline & Accuracy \\
+\midrule
+Always up & 0.3950 \\
+Always down & 0.5025 \\
+Always flat & 0.1025 \\
+\bottomrule
+\end{tabular}
+\caption{Direction-only baselines on the September 2021 through February 2022 test split. The always-down baseline is unusually strong because the test period contains more negative than positive or flat outcomes.}
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.82\textwidth]{figures/return_only_error_heatmap.pdf}
+\caption{Held-out MAE and RMSE for tuned return-only models across architecture and feature set. Stars mark the best value in each panel. These metrics favor low-variance predictions and should be interpreted alongside correlation.}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.82\textwidth]{figures/return_only_signal_heatmap.pdf}
+\caption{Directional accuracy and return correlation for tuned return-only models across architecture and feature set. Stars mark the best value in each panel.}
+\end{figure*}
+
+Among combined-feature neural models, the GRU obtains the best regression error (MAE 0.0476, RMSE 0.0655) and the strongest combined-feature correlation at 0.0838. The combined LSTM is close in error (MAE 0.0480, RMSE 0.0665) but has a slightly negative correlation of -0.0127, which suggests its predictions are not well-ordered relative to actual returns even when the magnitude is reasonable. The combined Transformer ties for the highest neural directional accuracy at 0.3950, but its correlation is nearly zero at 0.0059. However, none of these combined-feature models beat the always-down directional baseline or the zero-return regression baseline.
+
+The sentiment-only results are noticeably stronger on the signal metrics. Sentiment-only LSTM achieves the highest return correlation in the table at 0.2091, and sentiment-only GRU and Transformer follow at 0.1451 and 0.1112 respectively. All three sentiment-only models have positive correlations, in contrast to the technical-only models, which show negative correlations across all three architectures. On error metrics, sentiment-only Transformer achieves the best neural performance (MAE 0.0470, RMSE 0.0647), though the zero-return baseline (MAE 0.0448, RMSE 0.0639) is still lower.
+
+Ridge regression with sentiment-only features reaches a correlation of 0.1405, which is below the sentiment-only LSTM but above the Transformer. This indicates that the sentiment correlation is not entirely an artifact of model capacity; the signal is present in a linear model as well, though the LSTM extracts slightly more of it.
+
+Directional accuracy results are the weakest part of the table. The best neural value is 0.3950, far below the always-down baseline of 0.5025. This gap reflects both the difficulty of the test period and the fact that none of these models are optimized directly for direction classification. Directional accuracy is reported here as a diagnostic rather than as the primary measure of model quality.
+
+To give some sense of the stability of the correlation results, we computed a nonparametric row bootstrap from the saved prediction files over the 595 pooled test predictions, using 10{,}000 resamples and NumPy seed 42. The 95\% interval for the sentiment-only LSTM correlation is [0.1317, 0.2868] and for the sentiment-only Transformer is [0.0315, 0.1923]. These intervals should not be treated as formal confidence intervals given that the five-day target windows overlap in time, but they are consistent with a positive pooled signal in the sentiment-only models.
 
 \section{Discussion}
 
-We analyze whether sentiment provides additional predictive power beyond traditional financial indicators and how the two interact over time.
+The results point in a few different directions depending on which metric one prioritizes, and no single architecture dominates across all of them.
+
+The most practically significant finding is probably the one about preprocessing. The shift from out-of-box FinBERT to fine-tuned FinBERT had a larger effect on downstream return correlation than any change in model architecture. Out-of-box FinBERT produced daily sentiment features with almost no useful variation across ticker-days. After fine-tuning on StockTwits labels, the sentiment-only models show positive correlations in the 0.11 to 0.21 range. Prior work that uses financial language models directly on social media text without checking the class distribution of predictions may be underestimating the value of the sentiment source or drawing the wrong conclusions about which features are and are not useful.
+
+The LSTM's performance on correlation is notable. The sentiment-only LSTM achieves the strongest pooled return correlation at 0.2091, despite not minimizing RMSE. This pattern is consistent with the LSTM cell state accumulating weak sentiment signals over the lookback window, which would make sense if daily StockTwits sentiment evolves gradually rather than fluctuating sharply day to day. The GRU shows a similar but smaller positive correlation, and the difference between the two recurrent models may reflect the benefit of the LSTM's additional memory capacity in this setting. We are cautious about over-interpreting this, since the experiment involves only five stocks and a single test period.
+
+The Transformer trades off differently. Sentiment-only Transformer achieves the lowest MAE and RMSE among neural models but a lower correlation than either recurrent model. In this data regime, aggressive regularization may produce well-calibrated average-case predictions while compressing the spread of predictions enough to reduce correlation. Whether this represents a genuine architectural limitation or a consequence of the small dataset and the specific hyperparameter search is not clear from these results alone.
+
+Adding technical indicators to sentiment does not consistently help. Combined models improve over sentiment-only in some cases (combined GRU has better error than sentiment-only GRU) but not others (combined LSTM correlation is -0.0127 while sentiment-only LSTM is 0.2091). We suspect the technical features encode relationships selected by validation that did not transfer to the majority-negative September 2021 through February 2022 test period.
+
+One thing we did not investigate is whether the pooling of all five tickers into a shared model helps or hurts on a per-ticker basis. TSLA has roughly 2.2 million messages in the sentiment processing window compared to around 252,000 for NVDA, which means TSLA-specific sentiment dynamics could have an outsized influence on the shared model's learned representations. Whether that influence is useful or harmful for the other tickers is an open question that we leave to future work.
+
+\section{Limitations}
+
+The main limitations of this study are as follows. The dataset covers only five large-cap technology stocks, all of which are highly correlated with each other and with the overall tech sector. Results may not transfer to other sectors or to stocks with different volatility or liquidity profiles. The test window is also unusually skewed toward negative returns for this sector, which makes directional evaluation on this split difficult to interpret as a general result.
+
+StockTwits coverage in our dataset ends around February or March 2022, which limits the length and diversity of the test period. A longer evaluation window would give a better sense of how these models perform across different market environments. Additionally, the user-provided sentiment labels on StockTwits are noisy and self-selected; users who tag their messages are not a random sample of all users, and the fine-tuned classifier learns to predict these tags rather than some ground-truth sentiment construct. Daily aggregation discards intraday timing, which prior work suggests may matter for the predictive value of StockTwits data \cite{renault2017intraday}.
+
+Finally, all results are from a single fixed training seed with a 60-trial hyperparameter search budget. The bootstrap intervals provide some indication of test-set robustness, but a more complete analysis would involve multiple seeds and larger search budgets.
 
 \section{Conclusion}
 
-This work evaluates the role of textual sentiment in stock prediction. By comparing multiple model configurations, we aim to better understand the contribution of language-based signals in financial forecasting.
+We evaluated LSTM, GRU, and Transformer sequence models for five-trading-day return prediction using technical indicators and fine-tuned StockTwits sentiment features. A key part of the experiment involved the sentiment extraction pipeline. Out-of-box FinBERT assigned 80.77\% of StockTwits messages to the neutral class, making the raw daily aggregates nearly useless as features. Fine-tuning on explicit \textit{Bullish} and \textit{Bearish} user labels substantially improved the text classifier, reaching 0.8082 test accuracy and 0.8968 AUC.
+
+With fine-tuned sentiment, the sentiment-only LSTM achieves the strongest test correlation at 0.2091 and the sentiment-only Transformer achieves the lowest neural regression error (MAE 0.0470, RMSE 0.0647). Sentiment-only GRU and Transformer also produce positive correlations of 0.1451 and 0.1112. Technical-only models show negative correlations across all architectures, and adding technical indicators to sentiment features does not reliably improve over sentiment-only.
+
+These results suggest that domain-adapted StockTwits sentiment contains a measurable return-ranking signal, but the signal is modest. No model clears the always-down directional baseline. Future work should explore intraday sentiment timing, broader cross-sectional coverage, ranking-based training objectives, and evaluation across multiple market regimes and training seeds.
+
+\clearpage
+
+\begin{thebibliography}{99}
+
+\bibitem{renault2017intraday}
+T. Renault.
+\newblock Intraday online investor sentiment and return patterns in the U.S. stock market.
+\newblock \textit{Journal of Banking \& Finance}, 84:25--40, 2017.
+\newblock doi:10.1016/j.jbankfin.2017.07.002.
+
+\bibitem{divernois2023stocktwits}
+M.-A. Divernois and D. Filipovi\'{c}.
+\newblock StockTwits classified sentiment and stock returns.
+\newblock \textit{Digital Finance}, 6:249--281, 2024.
+\newblock doi:10.1007/s42521-023-00102-z.
+
+\bibitem{xu2018stocknet}
+Y. Xu and S. B. Cohen.
+\newblock Stock movement prediction from tweets and historical prices.
+\newblock In \textit{Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics}, pages 1970--1979, 2018.
+\newblock doi:10.18653/v1/P18-1183.
+
+\bibitem{hiew2019bert}
+J. Z. G. Hiew, X. Huang, H. Mou, D. Li, Q. Wu, and Y. Xu.
+\newblock BERT-based financial sentiment index and LSTM-based stock return predictability.
+\newblock \textit{arXiv preprint arXiv:1906.09024}, 2019.
+
+\bibitem{halder2022finbertlstm}
+S. Halder.
+\newblock FinBERT-LSTM: Deep learning based stock price prediction using news sentiment analysis.
+\newblock \textit{arXiv preprint arXiv:2211.07392}, 2022.
+
+\bibitem{liu2023stocktwitsfinbert}
+J.-X. Liu, J.-S. Leu, and S. Holst.
+\newblock Stock price movement prediction based on Stocktwits investor sentiment using FinBERT and ensemble SVM.
+\newblock \textit{PeerJ Computer Science}, 9:e1403, 2023.
+\newblock doi:10.7717/peerj-cs.1403.
+
+\bibitem{kaeley2023transformer}
+H. Kaeley, Y. Qiao, and N. Bagherzadeh.
+\newblock Support for stock trend prediction using Transformers and sentiment analysis.
+\newblock \textit{arXiv preprint arXiv:2305.14368}, 2023.
+
+\bibitem{hajek2025multimodal}
+P. H\'{a}jek, J. Novotn\'{y}, M. Munk, and D. Munkov\'{a}.
+\newblock Multimodal financial sentiment for stock return prediction.
+\newblock \textit{Procedia Computer Science}, 270:582--591, 2025.
+\newblock doi:10.1016/j.procs.2025.09.177.
+
+\bibitem{pei2025cmtf}
+Y. Pei, J. Cartlidge, A. Mandal, D. Gold, E. Marcilio, and R. Mazzon.
+\newblock Cross-modal temporal fusion for financial market forecasting.
+\newblock In \textit{14th Conference on Prestigious Applications of Intelligent Systems (PAIS-2025) at ECAI-2025}, \textit{Frontiers in Artificial Intelligence and Applications}, 413:5360--5367, 2025.
+\newblock doi:10.3233/FAIA251474.
+
+\bibitem{araci2019finbert}
+D. Araci.
+\newblock FinBERT: Financial sentiment analysis with pre-trained language models.
+\newblock \textit{arXiv preprint arXiv:1908.10063}, 2019.
+
+\bibitem{hochreiter1997lstm}
+S. Hochreiter and J. Schmidhuber.
+\newblock Long short-term memory.
+\newblock \textit{Neural Computation}, 9(8):1735--1780, 1997.
+\newblock doi:10.1162/neco.1997.9.8.1735.
+
+\bibitem{cho2014gru}
+K. Cho, B. van Merrienboer, C. Gulcehre, D. Bahdanau, F. Bougares, H. Schwenk, and Y. Bengio.
+\newblock Learning phrase representations using RNN encoder-decoder for statistical machine translation.
+\newblock In \textit{Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing}, pages 1724--1734, 2014.
+
+\bibitem{vaswani2017attention}
+A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, L. Kaiser, and I. Polosukhin.
+\newblock Attention is all you need.
+\newblock In \textit{Advances in Neural Information Processing Systems}, volume 30, 2017.
+
+\bibitem{kingma2015adam}
+D. P. Kingma and J. Ba.
+\newblock Adam: A method for stochastic optimization.
+\newblock In \textit{International Conference on Learning Representations}, 2015.
+
+\bibitem{loshchilov2019adamw}
+I. Loshchilov and F. Hutter.
+\newblock Decoupled weight decay regularization.
+\newblock In \textit{International Conference on Learning Representations}, 2019.
+
+\end{thebibliography}
+
+\clearpage
+
+\appendix
+
+\section{StockTwits Message Coverage}
+
+Table \ref{tab:stocktwits_message_counts} reports the raw StockTwits message counts by ticker for the January 1, 2020 through February 28, 2022 processing window, before daily aggregation. The TSLA count is substantially larger than the others, which is worth keeping in mind when interpreting results from the pooled model.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lr}
+\toprule
+Ticker & Raw Messages \\
+\midrule
+AAPL & 914{,}869 \\
+AMZN & 475{,}371 \\
+META & 321{,}428 \\
+NVDA & 251{,}959 \\
+TSLA & 2{,}197{,}400 \\
+\midrule
+Total & 4{,}161{,}027 \\
+\bottomrule
+\end{tabular}
+\caption{Raw StockTwits messages in the sentiment-processing window before daily aggregation.}
+\label{tab:stocktwits_message_counts}
+\end{table}
+
+\section{Best Tuned Model Configurations}
+
+All final models use the same forecasting information set. Sequences include only the current day and earlier, recurrence is forward-only, targets are scaled during training, and the training seed is fixed at 42. Hyperparameters are selected using validation performance only.
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\begin{tabular}{llcccccccc}
+\toprule
+Model & Feature Set & Seq. & Hidden & Layers & Pooling & Layer Norm & Head & Activation & Dropout \\
+\midrule
+LSTM & Combined & 10 & 64 & 1 & mean & no & 1 $\times$ 8 & tanh & 0.0 / 0.3 \\
+LSTM & Technical only & 30 & 96 & 3 & last & yes & 2 $\times$ 8 & GELU & 0.1 / 0.3 \\
+LSTM & Sentiment only & 20 & 64 & 3 & last+mean & yes & 1 $\times$ 16 & tanh & 0.2 / 0.1 \\
+GRU & Combined & 10 & 48 & 3 & last+mean & no & 1 $\times$ 32 & ReLU & 0.0 / 0.3 \\
+GRU & Technical only & 10 & 24 & 3 & last & no & 2 $\times$ 32 & tanh & 0.0 / 0.1 \\
+GRU & Sentiment only & 10 & 64 & 2 & last+mean & no & 2 $\times$ 32 & ReLU & 0.0 / 0.1 \\
+Transformer & Combined & 45 & 64 & 3 & last+mean & yes & 1 $\times$ 8 & ReLU & 0.0 / 0.3 \\
+Transformer & Technical only & 10 & 96 & 1 & last & yes & 1 $\times$ 16 & GELU & 0.2 / 0.2 \\
+Transformer & Sentiment only & 20 & 64 & 3 & last+mean & yes & 1 $\times$ 8 & GELU & 0.1 / 0.0 \\
+\bottomrule
+\end{tabular}
+\caption{Best return-only architecture configurations selected by validation search. Hidden reports recurrent hidden size for LSTM/GRU and attention dimension $d_{model}$ for the Transformer. Dropout is reported as recurrent or transformer dropout / fully connected dropout.}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\begin{tabular}{llccccccc}
+\toprule
+Model & Feature Set & Optimizer & LR & Weight Decay & Batch & Loss & Grad. Clip & Best Trial / Epochs \\
+\midrule
+LSTM & Combined & Adam & $10^{-3}$ & $10^{-5}$ & 32 & MAE & 0.5 & 28 / 15 \\
+LSTM & Technical only & AdamW & $10^{-3}$ & $10^{-4}$ & 16 & SmoothL1 & 1.0 & 7 / 10 \\
+LSTM & Sentiment only & AdamW & $3\times10^{-4}$ & $10^{-5}$ & 32 & SmoothL1 & 1.0 & 51 / 15 \\
+GRU & Combined & AdamW & $10^{-3}$ & $10^{-6}$ & 64 & MAE & 0.5 & 28 / 21 \\
+GRU & Technical only & AdamW & $10^{-4}$ & 0 & 16 & MSE & 0.5 & 25 / 47 \\
+GRU & Sentiment only & Adam & $10^{-3}$ & $10^{-4}$ & 32 & MAE & 1.0 & 9 / 19 \\
+Transformer & Combined & AdamW & $10^{-3}$ & $10^{-4}$ & 16 & SmoothL1 & 1.0 & 56 / 27 \\
+Transformer & Technical only & Adam & $10^{-4}$ & 0 & 16 & MSE & 1.0 & 48 / 35 \\
+Transformer & Sentiment only & AdamW & $10^{-3}$ & $10^{-5}$ & 64 & MAE & none & 52 / 31 \\
+\bottomrule
+\end{tabular}
+\caption{Best optimization and training configurations selected by validation search. Each model was selected from a 60-trial random search over its matched architecture-specific hyperparameter space.}
+\end{table*}
+
+\section{Contributions}
+
+\begin{center}
+\small
+\begin{tabular}{p{0.30\columnwidth}p{0.62\columnwidth}}
+\toprule
+Author & Contributions \\
+\midrule
+Agha A. Raza & Data preprocessing, FinBERT model adaptation and rescoring, sentiment feature construction, LSTM/GRU ablation design, split design, and leakage checks. \\
+Konam G. Kenneth & Technical feature pipeline, LSTM/GRU/Transformer architecture implementation, hyperparameter tuning, baseline evaluation, result aggregation, and figure/table generation. \\
+\midrule
+Both authors & Literature review, experimental design, interpretation of results, paper writing, editing, and final validation. \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 \end{document}

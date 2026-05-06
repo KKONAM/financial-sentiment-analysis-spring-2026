@@ -1,0 +1,223 @@
+{
+  "model": "Ridge",
+  "experiment": "2020-01-01_to_2022-02-28_v6_purged_warmtech_finetuned_finbert_sentiment",
+  "data_path": "data\\processed\\combined_features_AAPL_AMZN_META_NVDA_TSLA_2020-01-01_to_2022-02-28_5d_target_v6_purged_warmtech_finetuned_finbert_sentiment.csv",
+  "target_column": "future_return_5d",
+  "target_horizon_days": 5,
+  "train_end_date": "2021-04-30",
+  "val_end_date": "2021-08-31",
+  "sequence_lengths": [
+    10,
+    20,
+    30,
+    45
+  ],
+  "alpha_grid": [
+    1e-06,
+    1e-05,
+    0.0001,
+    0.001,
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0,
+    1000.0
+  ],
+  "selection_metric": "validation_rmse",
+  "results": [
+    {
+      "model": "Ridge",
+      "feature_group": "combined",
+      "features": "Combined",
+      "feature_columns": [
+        "returns",
+        "rsi",
+        "macd",
+        "bbp",
+        "momentum",
+        "volume",
+        "positive_score",
+        "negative_score",
+        "neutral_score",
+        "sentiment_score",
+        "sentiment_confidence",
+        "article_count",
+        "message_count"
+      ],
+      "sequence_length": 20,
+      "alpha": 1000.0,
+      "split_counts": {
+        "train": 1555,
+        "val": 400,
+        "test": 595
+      },
+      "validation_metrics": {
+        "mae": 0.03554332256317139,
+        "rmse": 0.04669939118085846,
+        "directional_accuracy": 0.4625,
+        "directional_baseline_accuracy": 0.5475,
+        "directional_lift": -0.08499999999999996,
+        "correlation": 0.031083730977230294,
+        "prediction_mean": 0.016298286616802216,
+        "prediction_std": 0.020155364647507668
+      },
+      "test_metrics": {
+        "mae": 0.05084465444087982,
+        "rmse": 0.06894766530677271,
+        "directional_accuracy": 0.3378151260504202,
+        "directional_baseline_accuracy": 0.5025210084033613,
+        "directional_lift": -0.16470588235294115,
+        "correlation": 0.060328773485644395,
+        "prediction_mean": 0.01584354043006897,
+        "prediction_std": 0.022637810558080673
+      },
+      "feature_scaler_mean": [
+        0.003451626493298019,
+        56.85222100834945,
+        -1.8514925880672403e-05,
+        0.6054122689424446,
+        0.049618412510744704,
+        181158022.5958209,
+        0.4971406084254635,
+        0.21854491548188293,
+        0.2843144760926534,
+        0.27859569294358066,
+        0.79940363973883,
+        1440.88,
+        1440.88
+      ],
+      "feature_scaler_scale": [
+        0.034849043383276684,
+        11.550941093869028,
+        0.011769704233214594,
+        0.3016277034608492,
+        0.13116083760679673,
+        186576999.00839132,
+        0.2566077085423694,
+        0.12380468964162893,
+        0.3312238824111216,
+        0.22943620952620974,
+        0.13499074489498067,
+        1972.5997339491148,
+        1972.5997339491148
+      ]
+    },
+    {
+      "model": "Ridge",
+      "feature_group": "technical_only",
+      "features": "Technical only",
+      "feature_columns": [
+        "returns",
+        "rsi",
+        "macd",
+        "bbp",
+        "momentum",
+        "volume"
+      ],
+      "sequence_length": 10,
+      "alpha": 1000.0,
+      "split_counts": {
+        "train": 1605,
+        "val": 400,
+        "test": 595
+      },
+      "validation_metrics": {
+        "mae": 0.03215520828962326,
+        "rmse": 0.04227792064571329,
+        "directional_accuracy": 0.545,
+        "directional_baseline_accuracy": 0.5475,
+        "directional_lift": -0.0024999999999999467,
+        "correlation": 0.13586495897989354,
+        "prediction_mean": 0.015550903044641018,
+        "prediction_std": 0.005503401625901461
+      },
+      "test_metrics": {
+        "mae": 0.049460865557193756,
+        "rmse": 0.06722212373375301,
+        "directional_accuracy": 0.3815126050420168,
+        "directional_baseline_accuracy": 0.5025210084033613,
+        "directional_lift": -0.12100840336134455,
+        "correlation": -0.016829569981376493,
+        "prediction_mean": 0.01663653925061226,
+        "prediction_std": 0.007550847250968218
+      },
+      "feature_scaler_mean": [
+        0.003451626493298019,
+        56.85222100834945,
+        -1.8514925880672403e-05,
+        0.6054122689424446,
+        0.049618412510744704,
+        181158022.5958209
+      ],
+      "feature_scaler_scale": [
+        0.034849043383276684,
+        11.550941093869028,
+        0.011769704233214594,
+        0.3016277034608492,
+        0.13116083760679673,
+        186576999.00839132
+      ]
+    },
+    {
+      "model": "Ridge",
+      "feature_group": "sentiment_only",
+      "features": "Sentiment only",
+      "feature_columns": [
+        "positive_score",
+        "negative_score",
+        "neutral_score",
+        "sentiment_score",
+        "sentiment_confidence",
+        "article_count",
+        "message_count"
+      ],
+      "sequence_length": 20,
+      "alpha": 1000.0,
+      "split_counts": {
+        "train": 1555,
+        "val": 400,
+        "test": 595
+      },
+      "validation_metrics": {
+        "mae": 0.034138273447752,
+        "rmse": 0.04494895326259662,
+        "directional_accuracy": 0.4625,
+        "directional_baseline_accuracy": 0.5475,
+        "directional_lift": -0.08499999999999996,
+        "correlation": 0.06831416752021646,
+        "prediction_mean": 0.01569817215204239,
+        "prediction_std": 0.017282813787460327
+      },
+      "test_metrics": {
+        "mae": 0.04863124340772629,
+        "rmse": 0.06608957981476513,
+        "directional_accuracy": 0.3563025210084034,
+        "directional_baseline_accuracy": 0.5025210084033613,
+        "directional_lift": -0.14621848739495796,
+        "correlation": 0.1405449456693708,
+        "prediction_mean": 0.014972853474318981,
+        "prediction_std": 0.016973961144685745
+      },
+      "feature_scaler_mean": [
+        0.4971406084254635,
+        0.21854491548188293,
+        0.2843144760926534,
+        0.27859569294358066,
+        0.79940363973883,
+        1440.88,
+        1440.88
+      ],
+      "feature_scaler_scale": [
+        0.2566077085423694,
+        0.12380468964162893,
+        0.3312238824111216,
+        0.22943620952620974,
+        0.13499074489498067,
+        1972.5997339491148,
+        1972.5997339491148
+      ]
+    }
+  ],
+  "runtime_seconds": 13.482
+}

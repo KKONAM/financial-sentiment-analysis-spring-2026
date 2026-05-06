@@ -1,0 +1,101 @@
+{
+  "model": "lstm",
+  "feature_group": "combined",
+  "feature_columns": [
+    "returns",
+    "rsi",
+    "macd",
+    "bbp",
+    "momentum",
+    "volume",
+    "positive_score",
+    "negative_score",
+    "neutral_score",
+    "sentiment_score",
+    "sentiment_confidence",
+    "article_count",
+    "message_count"
+  ],
+  "best_validation": {
+    "sequence_length": 20,
+    "include_current_row": true,
+    "hidden_size": 64,
+    "num_layers": 1,
+    "classifier_hidden": 16,
+    "head_layers": 2,
+    "bidirectional": false,
+    "recurrent_dropout": 0.0,
+    "fc_dropout": 0.3,
+    "activation_name": "relu",
+    "pooling_name": "mean",
+    "use_layer_norm": true,
+    "gru_bias": true,
+    "learning_rate": 0.0003,
+    "weight_decay": 1e-05,
+    "batch_size": 16,
+    "regression_loss_name": "mse",
+    "smooth_l1_beta": 0.1,
+    "direction_loss_weight": 2.0,
+    "class_weight_mode": "balanced",
+    "optimizer_name": "adam",
+    "gradient_clip": 1.0,
+    "scale_target": true,
+    "seed": 42,
+    "val_mae": 0.03278347849845886,
+    "val_rmse": 0.041555549243835345,
+    "val_correlation": 0.34747235718093195,
+    "val_prediction_mean": 0.006991788744926453,
+    "val_prediction_std": 0.02597925066947937,
+    "val_threshold_direction_accuracy": 0.4925,
+    "val_direction_accuracy": 0.5275,
+    "val_direction_baseline_accuracy": 0.5475,
+    "val_direction_lift": -0.020000000000000018,
+    "val_direction_macro_f1": 0.46201931856470085,
+    "val_direction_weighted_f1": 0.5246000176505992,
+    "val_direction_macro_precision": 0.4957329160146062,
+    "val_direction_macro_recall": 0.4770464204770377,
+    "selection_score": 0.040439538093513805,
+    "epochs_ran": 47,
+    "trial": 4,
+    "seconds": 26.063
+  },
+  "test_metrics": {
+    "mae": 0.050996482372283936,
+    "rmse": 0.06876627867508682,
+    "correlation": -0.01910790143234953,
+    "prediction_mean": 0.010112669318914413,
+    "prediction_std": 0.02099095843732357,
+    "threshold_direction_accuracy": 0.334453781512605,
+    "direction_accuracy": 0.38823529411764707,
+    "direction_baseline_accuracy": 0.5025210084033613,
+    "direction_lift": -0.11428571428571427,
+    "direction_macro_f1": 0.28833071690214546,
+    "direction_weighted_f1": 0.37709061646636677,
+    "direction_macro_precision": 0.2889061735215581,
+    "direction_macro_recall": 0.2918269206466231,
+    "confusion_matrix": [
+      [
+        158,
+        10,
+        131
+      ],
+      [
+        39,
+        3,
+        19
+      ],
+      [
+        141,
+        24,
+        70
+      ]
+    ]
+  },
+  "paths": {
+    "search_results": "reports\\final\\lstm_combined_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_search.csv",
+    "best_config": "reports\\final\\lstm_combined_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_best.json",
+    "predictions": "reports\\final\\lstm_combined_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_predictions.csv",
+    "checkpoint": "model_checkpoints\\final\\lstm_combined_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_best.pt"
+  },
+  "runtime_seconds": 1028.128
+}

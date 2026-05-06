@@ -1,0 +1,142 @@
+﻿[
+    {
+        "model":  "gru",
+        "feature_group":  "combined",
+        "best_trial":  46,
+        "epochs_ran":  17,
+        "val_score":  0.040676785507809586,
+        "val_direction_accuracy":  0.5725,
+        "val_macro_f1":  0.40338723186780429,
+        "test_mae":  0.049982260912656784,
+        "test_rmse":  0.06820756881914497,
+        "test_correlation":  -0.079714824090126882,
+        "test_threshold_direction_accuracy":  0.31092436974789917,
+        "test_direction_accuracy":  0.3848739495798319,
+        "test_macro_f1":  0.26756715032240191,
+        "test_weighted_f1":  0.35572202323217333,
+        "test_direction_lift":  -0.11764705882352938,
+        "confusion_matrix":  [
+                                 [
+                                     91,
+                                     0,
+                                     208
+                                 ],
+                                 [
+                                     19,
+                                     0,
+                                     42
+                                 ],
+                                 [
+                                     97,
+                                     0,
+                                     138
+                                 ]
+                             ],
+        "source":  "C:\\Users\\User\\Desktop\\Classes\\Deep Learning\\financial-sentiment-analysis-spring-2026\\reports\\final\\gru_combined_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_best.json"
+    },
+    {
+        "model":  "gru",
+        "feature_group":  "sentiment_only",
+        "best_trial":  24,
+        "epochs_ran":  54,
+        "val_score":  0.039753838310517833,
+        "val_direction_accuracy":  0.6175,
+        "val_macro_f1":  0.37981220657277,
+        "test_mae":  0.048980850726366043,
+        "test_rmse":  0.0667562656881862,
+        "test_correlation":  -0.015022178955312351,
+        "test_threshold_direction_accuracy":  0.34789915966386553,
+        "test_direction_accuracy":  0.42184873949579832,
+        "test_macro_f1":  0.25425794249323658,
+        "test_weighted_f1":  0.32313082095583329,
+        "test_direction_lift":  -0.080672268907563016,
+        "confusion_matrix":  [
+                                 [
+                                     37,
+                                     0,
+                                     262
+                                 ],
+                                 [
+                                     7,
+                                     0,
+                                     54
+                                 ],
+                                 [
+                                     21,
+                                     0,
+                                     214
+                                 ]
+                             ],
+        "source":  "C:\\Users\\User\\Desktop\\Classes\\Deep Learning\\financial-sentiment-analysis-spring-2026\\reports\\final\\gru_sentiment_only_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_best.json"
+    },
+    {
+        "model":  "lstm",
+        "feature_group":  "combined",
+        "best_trial":  4,
+        "epochs_ran":  47,
+        "val_score":  0.040439538093513805,
+        "val_direction_accuracy":  0.5275,
+        "val_macro_f1":  0.46201931856470085,
+        "test_mae":  0.050996482372283936,
+        "test_rmse":  0.06876627867508682,
+        "test_correlation":  -0.019107901432349531,
+        "test_threshold_direction_accuracy":  0.334453781512605,
+        "test_direction_accuracy":  0.38823529411764707,
+        "test_macro_f1":  0.28833071690214546,
+        "test_weighted_f1":  0.37709061646636682,
+        "test_direction_lift":  -0.11428571428571428,
+        "confusion_matrix":  [
+                                 [
+                                     158,
+                                     10,
+                                     131
+                                 ],
+                                 [
+                                     39,
+                                     3,
+                                     19
+                                 ],
+                                 [
+                                     141,
+                                     24,
+                                     70
+                                 ]
+                             ],
+        "source":  "C:\\Users\\User\\Desktop\\Classes\\Deep Learning\\financial-sentiment-analysis-spring-2026\\reports\\final\\lstm_combined_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_best.json"
+    },
+    {
+        "model":  "lstm",
+        "feature_group":  "sentiment_only",
+        "best_trial":  54,
+        "epochs_ran":  39,
+        "val_score":  0.03949009908529047,
+        "val_direction_accuracy":  0.59,
+        "val_macro_f1":  0.36182659778453569,
+        "test_mae":  0.0499715656042099,
+        "test_rmse":  0.066775609557625168,
+        "test_correlation":  0.036518871194289391,
+        "test_threshold_direction_accuracy":  0.38823529411764707,
+        "test_direction_accuracy":  0.41848739495798321,
+        "test_macro_f1":  0.27216422868596779,
+        "test_weighted_f1":  0.35313836490307077,
+        "test_direction_lift":  -0.08403361344537813,
+        "confusion_matrix":  [
+                                 [
+                                     59,
+                                     0,
+                                     240
+                                 ],
+                                 [
+                                     11,
+                                     0,
+                                     50
+                                 ],
+                                 [
+                                     45,
+                                     0,
+                                     190
+                                 ]
+                             ],
+        "source":  "C:\\Users\\User\\Desktop\\Classes\\Deep Learning\\financial-sentiment-analysis-spring-2026\\reports\\final\\lstm_sentiment_only_multitask_tuned_2020-01-01_to_2022-02-28_v4_purged_rawtech_labeled_sentiment_multitask_best.json"
+    }
+]

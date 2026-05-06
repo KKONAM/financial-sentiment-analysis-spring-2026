@@ -1,0 +1,46 @@
+{
+  "best_validation": {
+    "sequence_length": 30,
+    "include_current_row": true,
+    "hidden_size": 96,
+    "num_layers": 3,
+    "classifier_hidden": 16,
+    "bidirectional": false,
+    "lstm_dropout": 0.2,
+    "fc_dropout": 0.0,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0,
+    "batch_size": 32,
+    "loss_name": "mae",
+    "smooth_l1_beta": 0.05,
+    "optimizer_name": "adam",
+    "gradient_clip": null,
+    "scale_target": true,
+    "seed": 42,
+    "val_mae": 0.03144485875964165,
+    "val_rmse": 0.040797001454516396,
+    "val_directional_accuracy": 0.5576470588235294,
+    "val_correlation": 0.24660273076795938,
+    "val_prediction_mean": 0.013055581599473953,
+    "val_prediction_std": 0.017207439988851547,
+    "selection_score": 0.04865821614442681,
+    "epochs_ran": 13,
+    "trial": 13,
+    "seconds": 8.448
+  },
+  "test_metrics": {
+    "mae": 0.052138566970825195,
+    "rmse": 0.06921031478565527,
+    "directional_accuracy": 0.36470588235294116,
+    "correlation": -0.03580609391375019,
+    "prediction_mean": 0.016845466569066048,
+    "prediction_std": 0.01619754172861576
+  },
+  "paths": {
+    "search_results": "reports\\lstm_hyperparameter_search_2020-01-01_to_2022-02-28_v3_labeled_sentiment.csv",
+    "best_config": "reports\\lstm_best_hyperparameters_2020-01-01_to_2022-02-28_v3_labeled_sentiment.json",
+    "predictions": "reports\\lstm_tuned_5d_return_predictions_2020-01-01_to_2022-02-28_v3_labeled_sentiment.csv",
+    "checkpoint": "model_checkpoints\\lstm_tuned_5d_return_best_2020-01-01_to_2022-02-28_v3_labeled_sentiment.pt"
+  },
+  "runtime_seconds": 222.899
+}

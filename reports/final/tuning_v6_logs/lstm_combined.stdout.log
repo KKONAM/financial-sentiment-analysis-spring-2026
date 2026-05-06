@@ -1,0 +1,112 @@
+[tune] device=cpu trials=60 max_epochs=60 patience=8
+[tune] trial=001/060 score=0.052700 val_mae=0.032965 val_rmse=0.043367 val_dir=0.4125 epochs=15 best=0.052700
+[tune] trial=002/060 score=0.050366 val_mae=0.032350 val_rmse=0.042124 val_dir=0.4400 epochs=17 best=0.050366
+[tune] trial=003/060 score=0.051922 val_mae=0.032645 val_rmse=0.043409 val_dir=0.4750 epochs=12 best=0.050366
+[tune] trial=004/060 score=0.052480 val_mae=0.033488 val_rmse=0.044196 val_dir=0.5475 epochs=15 best=0.050366
+[tune] trial=005/060 score=0.050696 val_mae=0.032446 val_rmse=0.042723 val_dir=0.5225 epochs=19 best=0.050366
+[tune] trial=006/060 score=0.052118 val_mae=0.033473 val_rmse=0.043884 val_dir=0.5475 epochs=14 best=0.050366
+[tune] trial=007/060 score=0.057614 val_mae=0.031963 val_rmse=0.042182 val_dir=0.5475 epochs=25 best=0.050366
+[tune] trial=008/060 score=0.050323 val_mae=0.031973 val_rmse=0.041963 val_dir=0.4250 epochs=13 best=0.050323
+[tune] trial=009/060 score=0.051447 val_mae=0.032856 val_rmse=0.043150 val_dir=0.5000 epochs=16 best=0.050323
+[tune] trial=010/060 score=0.052958 val_mae=0.034049 val_rmse=0.044719 val_dir=0.5475 epochs=12 best=0.050323
+[tune] trial=011/060 score=0.050699 val_mae=0.032412 val_rmse=0.042122 val_dir=0.4050 epochs=17 best=0.050323
+[tune] trial=012/060 score=0.051677 val_mae=0.032999 val_rmse=0.043411 val_dir=0.5150 epochs=11 best=0.050323
+[tune] trial=013/060 score=0.051846 val_mae=0.032924 val_rmse=0.043073 val_dir=0.4600 epochs=19 best=0.050323
+[tune] trial=014/060 score=0.054784 val_mae=0.034162 val_rmse=0.045355 val_dir=0.4625 epochs=12 best=0.050323
+[tune] trial=015/060 score=0.051926 val_mae=0.033359 val_rmse=0.043770 val_dir=0.5475 epochs=19 best=0.050323
+[tune] trial=016/060 score=0.052668 val_mae=0.033232 val_rmse=0.044395 val_dir=0.5500 epochs=13 best=0.050323
+[tune] trial=017/060 score=0.051767 val_mae=0.032737 val_rmse=0.043588 val_dir=0.5350 epochs=14 best=0.050323
+[tune] trial=018/060 score=0.051545 val_mae=0.032466 val_rmse=0.043272 val_dir=0.5150 epochs=26 best=0.050323
+[tune] trial=019/060 score=0.051607 val_mae=0.033255 val_rmse=0.043274 val_dir=0.4850 epochs=14 best=0.050323
+[tune] trial=020/060 score=0.053678 val_mae=0.033316 val_rmse=0.044158 val_dir=0.5475 epochs=12 best=0.050323
+[tune] trial=021/060 score=0.049464 val_mae=0.031445 val_rmse=0.042112 val_dir=0.5225 epochs=13 best=0.049464
+[tune] trial=022/060 score=0.051278 val_mae=0.032098 val_rmse=0.042196 val_dir=0.3675 epochs=17 best=0.049464
+[tune] trial=023/060 score=0.052246 val_mae=0.033058 val_rmse=0.043531 val_dir=0.4600 epochs=20 best=0.049464
+[tune] trial=024/060 score=0.051797 val_mae=0.033221 val_rmse=0.043297 val_dir=0.4625 epochs=28 best=0.049464
+[tune] trial=025/060 score=0.051881 val_mae=0.033054 val_rmse=0.043123 val_dir=0.4625 epochs=11 best=0.049464
+[tune] trial=026/060 score=0.051321 val_mae=0.033360 val_rmse=0.043122 val_dir=0.4750 epochs=20 best=0.049464
+[tune] trial=027/060 score=0.052779 val_mae=0.032778 val_rmse=0.043434 val_dir=0.5475 epochs=13 best=0.049464
+[tune] trial=028/060 score=0.048979 val_mae=0.031442 val_rmse=0.041450 val_dir=0.4825 epochs=15 best=0.048979
+[tune] trial=029/060 score=0.053766 val_mae=0.034605 val_rmse=0.045382 val_dir=0.5300 epochs=25 best=0.048979
+[tune] trial=030/060 score=0.050491 val_mae=0.031755 val_rmse=0.042540 val_dir=0.5000 epochs=09 best=0.048979
+[tune] trial=031/060 score=0.052818 val_mae=0.032634 val_rmse=0.043534 val_dir=0.4275 epochs=15 best=0.048979
+[tune] trial=032/060 score=0.052506 val_mae=0.033197 val_rmse=0.044206 val_dir=0.5475 epochs=21 best=0.048979
+[tune] trial=033/060 score=0.051981 val_mae=0.032518 val_rmse=0.042929 val_dir=0.4250 epochs=36 best=0.048979
+[tune] trial=034/060 score=0.052784 val_mae=0.033696 val_rmse=0.044428 val_dir=0.5475 epochs=15 best=0.048979
+[tune] trial=035/060 score=0.052780 val_mae=0.033287 val_rmse=0.043559 val_dir=0.4275 epochs=16 best=0.048979
+[tune] trial=036/060 score=0.052754 val_mae=0.033081 val_rmse=0.044119 val_dir=0.5125 epochs=13 best=0.048979
+[tune] trial=037/060 score=0.053809 val_mae=0.033674 val_rmse=0.044248 val_dir=0.4275 epochs=11 best=0.048979
+[tune] trial=038/060 score=0.051430 val_mae=0.032630 val_rmse=0.043209 val_dir=0.5125 epochs=17 best=0.048979
+[tune] trial=039/060 score=0.053664 val_mae=0.033330 val_rmse=0.044066 val_dir=0.4100 epochs=17 best=0.048979
+[tune] trial=040/060 score=0.051248 val_mae=0.032220 val_rmse=0.043023 val_dir=0.4950 epochs=09 best=0.048979
+[tune] trial=041/060 score=0.055735 val_mae=0.035183 val_rmse=0.045671 val_dir=0.4075 epochs=10 best=0.048979
+[tune] trial=042/060 score=0.052027 val_mae=0.033048 val_rmse=0.043254 val_dir=0.4575 epochs=19 best=0.048979
+[tune] trial=043/060 score=0.051952 val_mae=0.033136 val_rmse=0.043744 val_dir=0.5250 epochs=16 best=0.048979
+[tune] trial=044/060 score=0.053075 val_mae=0.033383 val_rmse=0.044668 val_dir=0.5425 epochs=11 best=0.048979
+[tune] trial=045/060 score=0.051893 val_mae=0.032628 val_rmse=0.042973 val_dir=0.4425 epochs=23 best=0.048979
+[tune] trial=046/060 score=0.052080 val_mae=0.032799 val_rmse=0.043242 val_dir=0.4675 epochs=38 best=0.048979
+[tune] trial=047/060 score=0.053394 val_mae=0.033529 val_rmse=0.044348 val_dir=0.4700 epochs=11 best=0.048979
+[tune] trial=048/060 score=0.051707 val_mae=0.032870 val_rmse=0.043470 val_dir=0.5300 epochs=21 best=0.048979
+[tune] trial=049/060 score=0.052752 val_mae=0.033277 val_rmse=0.043393 val_dir=0.4075 epochs=23 best=0.048979
+[tune] trial=050/060 score=0.053490 val_mae=0.033214 val_rmse=0.043753 val_dir=0.3900 epochs=26 best=0.048979
+[tune] trial=051/060 score=0.050260 val_mae=0.032576 val_rmse=0.042458 val_dir=0.4875 epochs=20 best=0.048979
+[tune] trial=052/060 score=0.052504 val_mae=0.033702 val_rmse=0.044105 val_dir=0.5100 epochs=11 best=0.048979
+[tune] trial=053/060 score=0.052802 val_mae=0.032637 val_rmse=0.043498 val_dir=0.3825 epochs=15 best=0.048979
+[tune] trial=054/060 score=0.050965 val_mae=0.032049 val_rmse=0.042498 val_dir=0.4500 epochs=32 best=0.048979
+[tune] trial=055/060 score=0.051903 val_mae=0.032586 val_rmse=0.043006 val_dir=0.4475 epochs=19 best=0.048979
+[tune] trial=056/060 score=0.051854 val_mae=0.033009 val_rmse=0.043550 val_dir=0.5275 epochs=15 best=0.048979
+[tune] trial=057/060 score=0.056130 val_mae=0.034645 val_rmse=0.046388 val_dir=0.4400 epochs=10 best=0.048979
+[tune] trial=058/060 score=0.052064 val_mae=0.032942 val_rmse=0.043615 val_dir=0.5150 epochs=29 best=0.048979
+[tune] trial=059/060 score=0.050696 val_mae=0.032664 val_rmse=0.042595 val_dir=0.5075 epochs=11 best=0.048979
+[tune] trial=060/060 score=0.052000 val_mae=0.032547 val_rmse=0.043338 val_dir=0.4750 epochs=15 best=0.048979
+[tune] best validation config:
+{
+  "sequence_length": 10,
+  "include_current_row": true,
+  "hidden_size": 64,
+  "num_layers": 1,
+  "classifier_hidden": 8,
+  "head_layers": 1,
+  "bidirectional": false,
+  "lstm_dropout": 0.0,
+  "fc_dropout": 0.3,
+  "activation_name": "tanh",
+  "pooling_name": "mean",
+  "use_layer_norm": false,
+  "learning_rate": 0.001,
+  "weight_decay": 1e-05,
+  "batch_size": 32,
+  "loss_name": "mae",
+  "smooth_l1_beta": 0.05,
+  "optimizer_name": "adam",
+  "gradient_clip": 0.5,
+  "scale_target": true,
+  "seed": 42,
+  "val_mae": 0.031442198902368546,
+  "val_rmse": 0.04144957857530309,
+  "val_directional_accuracy": 0.4825,
+  "val_directional_baseline_accuracy": 0.5475,
+  "val_directional_lift": -0.065,
+  "val_correlation": 0.2453442403626307,
+  "val_prediction_mean": 0.0081853736191988,
+  "val_prediction_std": 0.014509858563542366,
+  "selection_score": 0.0489787513394447,
+  "epochs_ran": 15,
+  "trial": 28,
+  "seconds": 3.212
+}
+[tune] final test metrics:
+{
+  "mae": 0.048017535358667374,
+  "rmse": 0.06648037083689917,
+  "directional_accuracy": 0.3563025210084034,
+  "directional_baseline_accuracy": 0.5025210084033613,
+  "directional_lift": -0.14621848739495796,
+  "correlation": -0.012660335847745768,
+  "prediction_mean": 0.007694249041378498,
+  "prediction_std": 0.014652189798653126
+}
+[tune] wrote reports\final\lstm_combined_tuned_2020-01-01_to_2022-02-28_v6_purged_warmtech_finetuned_finbert_sentiment_search.csv
+[tune] wrote reports\final\lstm_combined_tuned_2020-01-01_to_2022-02-28_v6_purged_warmtech_finetuned_finbert_sentiment_best.json
+[tune] wrote reports\final\lstm_combined_tuned_2020-01-01_to_2022-02-28_v6_purged_warmtech_finetuned_finbert_sentiment_predictions.csv
+[tune] wrote model_checkpoints\final\lstm_combined_tuned_2020-01-01_to_2022-02-28_v6_purged_warmtech_finetuned_finbert_sentiment_best.pt
